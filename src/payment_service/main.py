@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import structlog
-from datetime import datetime
+from datetime import datetime, timezone
 
 from payment_service.config import settings
 from payment_service.api.routes import router
@@ -76,7 +76,7 @@ def create_app() -> FastAPI:
             content={
                 "error": f"HTTP_{exc.status_code}",
                 "message": exc.detail,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             },
         )
 
@@ -95,7 +95,7 @@ def create_app() -> FastAPI:
             content={
                 "error": "INTERNAL_SERVER_ERROR",
                 "message": "An unexpected error occurred",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             },
         )
 

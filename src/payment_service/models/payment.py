@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class PaymentStatus(str, Enum):
@@ -47,7 +47,8 @@ class CardData(BaseModel):
     cvv: str = Field(..., min_length=3, max_length=4)
     cardholder_name: str = Field(..., min_length=1, max_length=100)
 
-    @validator("card_number")
+    @field_validator("card_number")
+    @classmethod
     def validate_card_number(cls, v):
         """Validate card number format."""
         # Remove spaces and dashes
@@ -68,12 +69,14 @@ class PaymentRequest(BaseModel):
     description: Optional[str] = Field(None, max_length=500)
     metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
-    @validator("currency")
+    @field_validator("currency")
+    @classmethod
     def validate_currency(cls, v):
         """Validate currency code."""
         return v.upper()
 
-    @validator("amount")
+    @field_validator("amount")
+    @classmethod
     def validate_amount(cls, v):
         """Validate amount precision."""
         if v.as_tuple().exponent < -2:
@@ -124,7 +127,8 @@ class RefundRequest(BaseModel):
     reason: Optional[str] = Field(None, max_length=100)
     metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
-    @validator("amount")
+    @field_validator("amount")
+    @classmethod
     def validate_amount(cls, v):
         """Validate refund amount precision."""
         if v and v.as_tuple().exponent < -2:

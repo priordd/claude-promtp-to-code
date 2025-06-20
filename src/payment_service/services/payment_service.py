@@ -1,7 +1,7 @@
 """Core payment processing service with business logic."""
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any, Dict, Optional
 
@@ -361,7 +361,7 @@ class PaymentService:
             RETURNING *
         """
 
-        expires_at = datetime.utcnow() + timedelta(hours=24)  # 24-hour expiry
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=24)  # 24-hour expiry
 
         result = await database_manager.execute_query(
             query,

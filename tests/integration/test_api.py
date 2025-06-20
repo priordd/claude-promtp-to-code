@@ -22,7 +22,7 @@ class TestPaymentAPI:
         self, mock_process_payment, mock_db, client, sample_payment_request, valid_auth_token
     ):
         """Test successful payment processing."""
-        from datetime import datetime
+        from datetime import datetime, timezone
         from payment_service.models.payment import PaymentResponse, PaymentStatus, PaymentMethod
 
         # Mock successful response
@@ -37,13 +37,13 @@ class TestPaymentAPI:
             capture_id="cap_123456",
             description="Test payment",
             metadata={"test": True},
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
 
         response = client.post(
             "/api/v1/payments/process",
-            json=sample_payment_request.dict(),
+            json=sample_payment_request.model_dump(mode="json"),
             headers={"Authorization": valid_auth_token},
         )
 
@@ -57,7 +57,7 @@ class TestPaymentAPI:
         """Test payment processing without valid authentication."""
         response = client.post(
             "/api/v1/payments/process",
-            json=sample_payment_request.dict(),
+            json=sample_payment_request.model_dump(mode="json"),
             headers={"Authorization": invalid_auth_token},
         )
 
@@ -65,7 +65,7 @@ class TestPaymentAPI:
 
     def test_process_payment_no_auth(self, client, sample_payment_request):
         """Test payment processing without authentication."""
-        response = client.post("/api/v1/payments/process", json=sample_payment_request.dict())
+        response = client.post("/api/v1/payments/process", json=sample_payment_request.model_dump(mode="json"))
 
         assert response.status_code == 401
 
@@ -89,7 +89,7 @@ class TestPaymentAPI:
     @patch("payment_service.services.payment_service.PaymentService.get_payment_status")
     def test_get_payment_status_success(self, mock_get_status, client, valid_auth_token):
         """Test successful payment status retrieval."""
-        from datetime import datetime
+        from datetime import datetime, timezone
         from payment_service.models.payment import (
             PaymentStatusResponse,
             PaymentStatus,
@@ -107,8 +107,8 @@ class TestPaymentAPI:
             capture_id="cap_123456",
             description="Test payment",
             metadata={"test": True},
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
 
         response = client.get(
@@ -136,7 +136,7 @@ class TestPaymentAPI:
         self, mock_process_refund, client, sample_refund_request, valid_auth_token
     ):
         """Test successful refund processing."""
-        from datetime import datetime
+        from datetime import datetime, timezone
         from payment_service.models.payment import RefundResponse, RefundStatus
 
         mock_process_refund.return_value = RefundResponse(
@@ -148,14 +148,14 @@ class TestPaymentAPI:
             reason="Customer request",
             external_refund_id="ext_ref_123456",
             metadata={"test_refund": True},
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
-            processed_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+            processed_at=datetime.now(timezone.utc),
         )
 
         response = client.post(
             "/api/v1/payments/txn_123456/refund",
-            json=sample_refund_request.dict(),
+            json=sample_refund_request.model_dump(mode="json"),
             headers={"Authorization": valid_auth_token},
         )
 
@@ -174,7 +174,7 @@ class TestPaymentAPI:
 
         response = client.post(
             "/api/v1/payments/invalid_txn/refund",
-            json=sample_refund_request.dict(),
+            json=sample_refund_request.model_dump(mode="json"),
             headers={"Authorization": valid_auth_token},
         )
 

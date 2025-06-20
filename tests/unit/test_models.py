@@ -207,7 +207,7 @@ class TestPaymentResponse:
 
     def test_payment_response_creation(self):
         """Test payment response creation."""
-        from datetime import datetime
+        from datetime import datetime, timezone
 
         response = PaymentResponse(
             transaction_id="txn_123456",
@@ -220,8 +220,8 @@ class TestPaymentResponse:
             capture_id="cap_123456",
             description="Test payment",
             metadata={"test": True},
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
         assert response.transaction_id == "txn_123456"
         assert response.status == PaymentStatus.CAPTURED

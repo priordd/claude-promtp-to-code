@@ -1,6 +1,6 @@
 """API routes for the payment service."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Depends, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -49,14 +49,14 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
     # In a real implementation, validate the token
     # For demo purposes, we'll accept any token
-    if not credentials.token or len(credentials.token) < 10:
+    if not credentials.credentials or len(credentials.credentials) < 10:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication token",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return {"user_id": "demo_user", "token": credentials.token}
+    return {"user_id": "demo_user", "token": credentials.credentials}
 
 
 @router.post("/api/v1/payments/process", response_model=PaymentResponse)
@@ -242,7 +242,7 @@ async def health_check() -> HealthCheckResponse:
 
         response = HealthCheckResponse(
             status=status_text,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             version=settings.dd_version,
             services=services,
         )
@@ -260,7 +260,7 @@ async def root():
         "service": "Payment Processing Service",
         "version": settings.dd_version,
         "status": "running",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 
