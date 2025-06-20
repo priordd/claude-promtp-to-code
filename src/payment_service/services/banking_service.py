@@ -1,6 +1,5 @@
 """Banking service for external payment processing."""
 
-import asyncio
 from decimal import Decimal
 from typing import Any, Dict, Optional
 
@@ -14,12 +13,12 @@ from payment_service.models.payment import CardData
 
 class BankingService:
     """Service for interacting with external banking APIs."""
-    
+
     def __init__(self):
         self.logger = structlog.get_logger(__name__)
         self.base_url = settings.banking_api_url
         self.timeout = settings.banking_api_timeout
-    
+
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
     async def authorize_payment(
         self,
@@ -37,22 +36,24 @@ class BankingService:
             currency=currency,
             correlation_id=correlation_id,
         )
-        
+
         payload = {
             "transaction_id": transaction_id,
             "amount": float(amount),
             "currency": currency,
         }
-        
+
         if card_data:
-            payload.update({
-                "card_number": card_data.card_number,
-                "expiry_month": card_data.expiry_month,
-                "expiry_year": card_data.expiry_year,
-                "cvv": card_data.cvv,
-                "cardholder_name": card_data.cardholder_name,
-            })
-        
+            payload.update(
+                {
+                    "card_number": card_data.card_number,
+                    "expiry_month": card_data.expiry_month,
+                    "expiry_year": card_data.expiry_year,
+                    "cvv": card_data.cvv,
+                    "cardholder_name": card_data.cardholder_name,
+                }
+            )
+
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.post(
@@ -61,9 +62,9 @@ class BankingService:
                     headers={
                         "Content-Type": "application/json",
                         "X-Correlation-ID": correlation_id,
-                    }
+                    },
                 )
-                
+
                 if response.status_code == 200:
                     result = response.json()
                     self.logger.info(
@@ -89,7 +90,7 @@ class BankingService:
                     }
                 else:
                     response.raise_for_status()
-                    
+
         except httpx.TimeoutException:
             self.logger.error(
                 "Banking service timeout",
@@ -113,7 +114,7 @@ class BankingService:
                 correlation_id=correlation_id,
             )
             raise
-    
+
     async def capture_payment(
         self,
         authorization_id: str,
@@ -125,11 +126,11 @@ class BankingService:
             authorization_id=authorization_id,
             correlation_id=correlation_id,
         )
-        
+
         payload = {
             "authorization_id": authorization_id,
         }
-        
+
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.post(
@@ -138,21 +139,21 @@ class BankingService:
                     headers={
                         "Content-Type": "application/json",
                         "X-Correlation-ID": correlation_id,
-                    }
+                    },
                 )
-                
+
                 response.raise_for_status()
                 result = response.json()
-                
+
                 self.logger.info(
                     "Payment captured successfully",
                     authorization_id=authorization_id,
                     capture_id=result.get("capture_id"),
                     correlation_id=correlation_id,
                 )
-                
+
                 return result
-                
+
         except httpx.TimeoutException:
             self.logger.error(
                 "Banking service timeout during capture",
@@ -168,7 +169,7 @@ class BankingService:
                 correlation_id=correlation_id,
             )
             raise Exception(f"Banking service error: {str(e)}")
-    
+
     async def process_refund(
         self,
         transaction_id: str,
@@ -182,12 +183,12 @@ class BankingService:
             amount=str(amount),
             correlation_id=correlation_id,
         )
-        
+
         payload = {
             "transaction_id": transaction_id,
             "amount": float(amount),
         }
-        
+
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.post(
@@ -196,21 +197,21 @@ class BankingService:
                     headers={
                         "Content-Type": "application/json",
                         "X-Correlation-ID": correlation_id,
-                    }
+                    },
                 )
-                
+
                 response.raise_for_status()
                 result = response.json()
-                
+
                 self.logger.info(
                     "Refund processed successfully",
                     transaction_id=transaction_id,
                     refund_id=result.get("refund_id"),
                     correlation_id=correlation_id,
                 )
-                
+
                 return result
-                
+
         except httpx.TimeoutException:
             self.logger.error(
                 "Banking service timeout during refund",
@@ -226,7 +227,7 @@ class BankingService:
                 correlation_id=correlation_id,
             )
             raise Exception(f"Banking service error: {str(e)}")
-    
+
     async def health_check(self) -> bool:
         """Check banking service health."""
         try:

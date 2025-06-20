@@ -1,8 +1,6 @@
 """API routes for the payment service."""
 
-import asyncio
 from datetime import datetime
-from typing import Dict, Any
 
 from fastapi import APIRouter, HTTPException, Depends, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -10,14 +8,18 @@ import structlog
 
 from payment_service.config import settings
 from payment_service.models.payment import (
-    PaymentRequest, PaymentResponse, PaymentStatusResponse,
-    RefundRequest, RefundResponse, HealthCheckResponse, ErrorResponse
+    PaymentRequest,
+    PaymentResponse,
+    PaymentStatusResponse,
+    RefundRequest,
+    RefundResponse,
+    HealthCheckResponse,
 )
 from payment_service.services.payment_service import PaymentService
 from payment_service.services.banking_service import BankingService
 from payment_service.services.event_service import EventService
 from payment_service.database.connection import database_manager
-from payment_service.utils.logging import get_correlation_id, add_correlation_context
+from payment_service.utils.logging import get_correlation_id
 from payment_service.utils.monitoring import create_span, increment_counter
 
 
@@ -44,7 +46,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             detail="Authentication required",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # In a real implementation, validate the token
     # For demo purposes, we'll accept any token
     if not credentials.token or len(credentials.token) < 10:
@@ -53,7 +55,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             detail="Invalid authentication token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     return {"user_id": "demo_user", "token": credentials.token}
 
 
@@ -65,7 +67,7 @@ async def process_payment(
 ) -> PaymentResponse:
     """Process a new payment."""
     correlation_id = get_correlation_id()
-    
+
     with create_span("api.process_payment", resource="POST /api/v1/payments/process"):
         logger.info(
             "Processing payment request",
@@ -74,12 +76,12 @@ async def process_payment(
             currency=payment_request.currency,
             correlation_id=correlation_id,
         )
-        
+
         try:
             result = await payment_service.process_payment(payment_request, correlation_id)
             increment_counter("api.payment.success")
             return result
-            
+
         except ValueError as e:
             logger.warning(
                 "Payment validation error",
@@ -111,19 +113,19 @@ async def get_payment_status(
 ) -> PaymentStatusResponse:
     """Get payment status by transaction ID."""
     correlation_id = get_correlation_id()
-    
+
     with create_span("api.get_payment_status", resource="GET /api/v1/payments/{transaction_id}"):
         logger.info(
             "Getting payment status",
             transaction_id=transaction_id,
             correlation_id=correlation_id,
         )
-        
+
         try:
             result = await payment_service.get_payment_status(transaction_id, correlation_id)
             increment_counter("api.payment_status.success")
             return result
-            
+
         except ValueError as e:
             logger.warning(
                 "Payment not found",
@@ -158,20 +160,24 @@ async def process_refund(
 ) -> RefundResponse:
     """Process a refund for a transaction."""
     correlation_id = get_correlation_id()
-    
-    with create_span("api.process_refund", resource="POST /api/v1/payments/{transaction_id}/refund"):
+
+    with create_span(
+        "api.process_refund", resource="POST /api/v1/payments/{transaction_id}/refund"
+    ):
         logger.info(
             "Processing refund request",
             transaction_id=transaction_id,
             amount=str(refund_request.amount) if refund_request.amount else "full",
             correlation_id=correlation_id,
         )
-        
+
         try:
-            result = await payment_service.process_refund(transaction_id, refund_request, correlation_id)
+            result = await payment_service.process_refund(
+                transaction_id, refund_request, correlation_id
+            )
             increment_counter("api.refund.success")
             return result
-            
+
         except ValueError as e:
             logger.warning(
                 "Refund validation error",
@@ -203,9 +209,9 @@ async def health_check() -> HealthCheckResponse:
     """Health check endpoint."""
     with create_span("api.health_check", resource="GET /health"):
         logger.info("Health check requested")
-        
+
         services = {}
-        
+
         # Check database
         try:
             db_healthy = await database_manager.health_check()
@@ -213,7 +219,7 @@ async def health_check() -> HealthCheckResponse:
         except Exception as e:
             logger.warning("Database health check failed", error=str(e))
             services["database"] = False
-        
+
         # Check banking service
         try:
             banking_healthy = await banking_service.health_check()
@@ -221,7 +227,7 @@ async def health_check() -> HealthCheckResponse:
         except Exception as e:
             logger.warning("Banking service health check failed", error=str(e))
             services["banking_service"] = False
-        
+
         # Check event service
         try:
             event_healthy = await event_service.health_check()
@@ -229,21 +235,21 @@ async def health_check() -> HealthCheckResponse:
         except Exception as e:
             logger.warning("Event service health check failed", error=str(e))
             services["event_service"] = False
-        
+
         # Overall health
         overall_healthy = all(services.values())
         status_text = "healthy" if overall_healthy else "unhealthy"
-        
+
         response = HealthCheckResponse(
             status=status_text,
             timestamp=datetime.utcnow(),
             version=settings.dd_version,
             services=services,
         )
-        
+
         logger.info("Health check completed", status=status_text, services=services)
         increment_counter("api.health_check", tags={"status": status_text})
-        
+
         return response
 
 
@@ -258,40 +264,4 @@ async def root():
     }
 
 
-# Error handlers
-@router.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    """Handle HTTP exceptions."""
-    correlation_id = get_correlation_id()
-    
-    logger.warning(
-        "HTTP exception",
-        status_code=exc.status_code,
-        detail=exc.detail,
-        correlation_id=correlation_id,
-    )
-    
-    return ErrorResponse(
-        error=f"HTTP_{exc.status_code}",
-        message=exc.detail,
-        correlation_id=correlation_id,
-    )
-
-
-@router.exception_handler(Exception)
-async def general_exception_handler(request: Request, exc: Exception):
-    """Handle general exceptions."""
-    correlation_id = get_correlation_id()
-    
-    logger.error(
-        "Unhandled exception",
-        error=str(exc),
-        error_type=type(exc).__name__,
-        correlation_id=correlation_id,
-    )
-    
-    return ErrorResponse(
-        error="INTERNAL_SERVER_ERROR",
-        message="An unexpected error occurred",
-        correlation_id=correlation_id,
-    )
+# Error handlers moved to main.py

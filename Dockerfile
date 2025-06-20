@@ -21,12 +21,15 @@ WORKDIR /app
 # Copy dependency files
 COPY pyproject.toml ./
 
-# Install dependencies
-RUN uv pip install --system -e .[dev]
+# Install dependencies (without editable mode for Docker)
+RUN uv pip install --system fastapi[standard] pydantic pydantic-settings psycopg2-binary python-dotenv structlog ddtrace kafka-python cryptography httpx tenacity uvicorn
 
 # Copy application code
 COPY src/ ./src/
 COPY scripts/ ./scripts/
+
+# Add src to Python path
+ENV PYTHONPATH=/app/src
 
 # Create non-root user
 RUN groupadd -r appuser && useradd -r -g appuser appuser

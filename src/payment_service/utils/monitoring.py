@@ -10,10 +10,10 @@ from payment_service.utils.datadog_integration import datadog_integration
 def setup_monitoring() -> None:
     """Initialize monitoring and observability tools."""
     logger = structlog.get_logger(__name__)
-    
+
     # Initialize Datadog integration
     datadog_integration.create_custom_metrics()
-    
+
     logger.info(
         "Monitoring setup complete",
         service=settings.dd_service,
@@ -32,10 +32,10 @@ def increment_counter(metric_name: str, value: int = 1, tags: Optional[dict] = N
     """Increment a counter metric."""
     if not settings.metrics_enabled:
         return
-    
+
     # Use Datadog integration
     datadog_integration.increment_counter(metric_name, value, tags)
-    
+
     # Also log for debugging
     logger = structlog.get_logger(__name__)
     logger.debug(

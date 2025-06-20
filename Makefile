@@ -17,38 +17,52 @@ help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 # Development setup
+venv: ## Create virtual environment with uv
+	@echo "Creating virtual environment..."
+	$(UV) venv --python 3.12
+
 install: ## Install dependencies with uv
 	@echo "Installing dependencies..."
-	$(UV) pip install -e .[dev]
+	$(UV) sync --dev
 
-dev: install ## Setup development environment
+dev: venv install ## Setup development environment
 	@echo "Setting up development environment..."
 	@if [ ! -f .env ]; then cp .env.example .env; echo "Created .env file from template"; fi
 	@echo "Development environment ready!"
 
+add-dep: ## Add a new dependency (usage: make add-dep PACKAGE=package-name)
+	@if [ -z "$(PACKAGE)" ]; then echo "Usage: make add-dep PACKAGE=package-name"; exit 1; fi
+	@echo "Adding dependency: $(PACKAGE)"
+	$(UV) add $(PACKAGE)
+
+add-dev-dep: ## Add a new dev dependency (usage: make add-dev-dep PACKAGE=package-name)
+	@if [ -z "$(PACKAGE)" ]; then echo "Usage: make add-dev-dep PACKAGE=package-name"; exit 1; fi
+	@echo "Adding dev dependency: $(PACKAGE)"
+	$(UV) add --dev $(PACKAGE)
+
 # Code quality
 lint: ## Run code linting
 	@echo "Running linting..."
-	ruff check src/ tests/
-	mypy src/
+	$(UV) run ruff check src/ tests/
+	$(UV) run mypy src/
 
 format: ## Format code
 	@echo "Formatting code..."
-	black src/ tests/
-	ruff check --fix src/ tests/
+	$(UV) run black src/ tests/
+	$(UV) run ruff check --fix src/ tests/
 
 # Testing
 test: ## Run unit and integration tests
 	@echo "Running tests..."
-	pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=html
+	$(UV) run pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=html
 
 test-unit: ## Run only unit tests
 	@echo "Running unit tests..."
-	pytest tests/unit/ -v
+	$(UV) run pytest tests/unit/ -v
 
 test-integration: ## Run only integration tests
 	@echo "Running integration tests..."
-	pytest tests/integration/ -v
+	$(UV) run pytest tests/integration/ -v
 
 test-api: ## Run API tests against running service
 	@echo "Running API tests..."
@@ -104,7 +118,7 @@ db-seed: ## Seed database with test data
 run-local: ## Run service locally (without Docker)
 	@echo "Running service locally..."
 	@echo "Make sure PostgreSQL and Kafka are running (use docker-compose up postgres kafka zookeeper)"
-	uvicorn payment_service.main:app --host 0.0.0.0 --port 8000 --reload
+	$(UV) run uvicorn payment_service.main:app --host 0.0.0.0 --port 8000 --reload
 
 dev-setup: docker-up ## Complete development setup
 	@echo "Waiting for services to be ready..."
@@ -136,6 +150,13 @@ clean: ## Clean up generated files
 	rm -rf *.egg-info/
 	find . -type d -name __pycache__ -delete
 	find . -type f -name "*.pyc" -delete
+
+clean-venv: ## Remove virtual environment
+	@echo "Removing virtual environment..."
+	rm -rf .venv/
+
+clean-all: clean clean-venv ## Clean everything including virtual environment
+	@echo "All cleaned up!"
 
 clean-docker: ## Clean up Docker resources
 	@echo "Cleaning up Docker resources..."

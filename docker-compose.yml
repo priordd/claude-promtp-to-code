@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   payment-service:
     build:
@@ -111,7 +109,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /proc/:/host/proc/:ro
       - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
-      - /opt/datadog-agent/run:/opt/datadog-agent/run:rw
     labels:
       com.datadoghq.ad.logs: '[{"source": "datadog-agent", "service": "datadog-agent"}]'
 

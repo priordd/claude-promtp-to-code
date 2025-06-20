@@ -5,14 +5,19 @@ from decimal import Decimal
 from pydantic import ValidationError
 
 from payment_service.models.payment import (
-    CardData, PaymentRequest, PaymentResponse, RefundRequest,
-    PaymentMethod, PaymentStatus, RefundStatus
+    CardData,
+    PaymentRequest,
+    PaymentResponse,
+    RefundRequest,
+    PaymentMethod,
+    PaymentStatus,
+    RefundStatus,
 )
 
 
 class TestCardData:
     """Test CardData model."""
-    
+
     def test_valid_card_data(self):
         """Test valid card data creation."""
         card = CardData(
@@ -27,7 +32,7 @@ class TestCardData:
         assert card.expiry_year == 2025
         assert card.cvv == "123"
         assert card.cardholder_name == "John Doe"
-    
+
     def test_card_number_validation(self):
         """Test card number validation."""
         # Valid card number with spaces and dashes
@@ -39,7 +44,7 @@ class TestCardData:
             cardholder_name="John Doe",
         )
         assert card.card_number == "4111111111111111"
-        
+
         # Invalid card number (too short)
         with pytest.raises(ValidationError):
             CardData(
@@ -49,7 +54,7 @@ class TestCardData:
                 cvv="123",
                 cardholder_name="John Doe",
             )
-    
+
     def test_expiry_month_validation(self):
         """Test expiry month validation."""
         # Invalid month (too high)
@@ -61,7 +66,7 @@ class TestCardData:
                 cvv="123",
                 cardholder_name="John Doe",
             )
-        
+
         # Invalid month (too low)
         with pytest.raises(ValidationError):
             CardData(
@@ -71,7 +76,7 @@ class TestCardData:
                 cvv="123",
                 cardholder_name="John Doe",
             )
-    
+
     def test_expiry_year_validation(self):
         """Test expiry year validation."""
         # Invalid year (too low)
@@ -87,7 +92,7 @@ class TestCardData:
 
 class TestPaymentRequest:
     """Test PaymentRequest model."""
-    
+
     def test_valid_payment_request(self, sample_card_data):
         """Test valid payment request creation."""
         request = PaymentRequest(
@@ -103,7 +108,7 @@ class TestPaymentRequest:
         assert request.amount == Decimal("99.99")
         assert request.currency == "USD"
         assert request.payment_method == PaymentMethod.CREDIT_CARD
-    
+
     def test_currency_normalization(self, sample_card_data):
         """Test currency code normalization."""
         request = PaymentRequest(
@@ -114,7 +119,7 @@ class TestPaymentRequest:
             card_data=sample_card_data,
         )
         assert request.currency == "USD"
-    
+
     def test_amount_validation(self, sample_card_data):
         """Test amount validation."""
         # Negative amount
@@ -126,7 +131,7 @@ class TestPaymentRequest:
                 payment_method=PaymentMethod.CREDIT_CARD,
                 card_data=sample_card_data,
             )
-        
+
         # Zero amount
         with pytest.raises(ValidationError):
             PaymentRequest(
@@ -136,7 +141,7 @@ class TestPaymentRequest:
                 payment_method=PaymentMethod.CREDIT_CARD,
                 card_data=sample_card_data,
             )
-        
+
         # Too many decimal places
         with pytest.raises(ValidationError):
             PaymentRequest(
@@ -146,7 +151,7 @@ class TestPaymentRequest:
                 payment_method=PaymentMethod.CREDIT_CARD,
                 card_data=sample_card_data,
             )
-    
+
     def test_optional_fields(self):
         """Test optional fields."""
         request = PaymentRequest(
@@ -162,7 +167,7 @@ class TestPaymentRequest:
 
 class TestRefundRequest:
     """Test RefundRequest model."""
-    
+
     def test_valid_refund_request(self):
         """Test valid refund request creation."""
         request = RefundRequest(
@@ -173,7 +178,7 @@ class TestRefundRequest:
         assert request.amount == Decimal("50.00")
         assert request.reason == "Customer request"
         assert request.metadata == {"test": True}
-    
+
     def test_optional_amount(self):
         """Test optional amount (full refund)."""
         request = RefundRequest(
@@ -181,17 +186,17 @@ class TestRefundRequest:
         )
         assert request.amount is None
         assert request.reason == "Customer request"
-    
+
     def test_amount_validation(self):
         """Test refund amount validation."""
         # Negative amount
         with pytest.raises(ValidationError):
             RefundRequest(amount=Decimal("-10.00"))
-        
+
         # Zero amount
         with pytest.raises(ValidationError):
             RefundRequest(amount=Decimal("0.00"))
-        
+
         # Too many decimal places
         with pytest.raises(ValidationError):
             RefundRequest(amount=Decimal("10.999"))
@@ -199,11 +204,11 @@ class TestRefundRequest:
 
 class TestPaymentResponse:
     """Test PaymentResponse model."""
-    
+
     def test_payment_response_creation(self):
         """Test payment response creation."""
         from datetime import datetime
-        
+
         response = PaymentResponse(
             transaction_id="txn_123456",
             status=PaymentStatus.CAPTURED,
@@ -226,7 +231,7 @@ class TestPaymentResponse:
 
 class TestEnums:
     """Test enum classes."""
-    
+
     def test_payment_status_enum(self):
         """Test PaymentStatus enum."""
         assert PaymentStatus.PENDING.value == "pending"
@@ -235,14 +240,14 @@ class TestEnums:
         assert PaymentStatus.FAILED.value == "failed"
         assert PaymentStatus.CANCELLED.value == "cancelled"
         assert PaymentStatus.EXPIRED.value == "expired"
-    
+
     def test_payment_method_enum(self):
         """Test PaymentMethod enum."""
         assert PaymentMethod.CREDIT_CARD.value == "credit_card"
         assert PaymentMethod.DEBIT_CARD.value == "debit_card"
         assert PaymentMethod.BANK_TRANSFER.value == "bank_transfer"
         assert PaymentMethod.DIGITAL_WALLET.value == "digital_wallet"
-    
+
     def test_refund_status_enum(self):
         """Test RefundStatus enum."""
         assert RefundStatus.PENDING.value == "pending"

@@ -10,14 +10,14 @@ from payment_service.config import settings
 
 def setup_logging() -> None:
     """Configure structured logging with appropriate processors."""
-    
+
     # Configure stdlib logging
     logging.basicConfig(
         format="%(message)s",
         stream=sys.stdout,
         level=logging.INFO if not settings.debug else logging.DEBUG,
     )
-    
+
     # Configure structlog
     processors = [
         structlog.stdlib.filter_by_level,
@@ -28,12 +28,12 @@ def setup_logging() -> None:
         structlog.processors.StackInfoRenderer(),
         structlog.processors.format_exc_info,
     ]
-    
+
     if settings.debug:
         processors.append(structlog.dev.ConsoleRenderer())
     else:
         processors.append(structlog.processors.JSONRenderer())
-    
+
     structlog.configure(
         processors=processors,
         context_class=dict,
@@ -46,6 +46,7 @@ def setup_logging() -> None:
 def get_correlation_id() -> str:
     """Generate a correlation ID for request tracking."""
     import uuid
+
     return str(uuid.uuid4())
 
 

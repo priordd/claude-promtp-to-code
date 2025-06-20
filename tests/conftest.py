@@ -3,7 +3,7 @@
 import asyncio
 import pytest
 from decimal import Decimal
-from typing import AsyncGenerator, Generator
+from typing import Generator
 from unittest.mock import AsyncMock, Mock
 
 from fastapi.testclient import TestClient
@@ -11,7 +11,6 @@ from faker import Faker
 
 from payment_service.main import app
 from payment_service.models.payment import PaymentRequest, RefundRequest, CardData, PaymentMethod
-from payment_service.database.connection import database_manager
 
 
 fake = Faker()
@@ -92,28 +91,28 @@ def invalid_auth_token() -> str:
 def mock_banking_service():
     """Mock banking service for testing."""
     mock_service = AsyncMock()
-    
+
     # Default successful responses
     mock_service.authorize_payment.return_value = {
         "status": "approved",
         "authorization_id": "auth_123456",
         "message": "Payment authorized",
     }
-    
+
     mock_service.capture_payment.return_value = {
         "status": "captured",
         "capture_id": "cap_123456",
         "message": "Payment captured",
     }
-    
+
     mock_service.process_refund.return_value = {
         "status": "refunded",
         "refund_id": "ref_123456",
         "message": "Refund processed",
     }
-    
+
     mock_service.health_check.return_value = True
-    
+
     return mock_service
 
 
