@@ -54,15 +54,15 @@ format: ## Format code
 # Testing
 test: ## Run unit and integration tests
 	@echo "Running tests..."
-	unset OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE && $(UV) run pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=html
+	PYTHONPATH=src DD_TRACE_ENABLED=false $(UV) run pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=html
 
 test-unit: ## Run only unit tests
 	@echo "Running unit tests..."
-	unset OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE && $(UV) run pytest tests/unit/ -v
+	PYTHONPATH=src DD_TRACE_ENABLED=false $(UV) run pytest tests/unit/ -v
 
 test-integration: ## Run only integration tests
 	@echo "Running integration tests..."
-	unset OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE && $(UV) run pytest tests/integration/ -v
+	PYTHONPATH=src DD_TRACE_ENABLED=false $(UV) run pytest tests/integration/ -v
 
 test-api: ## Run API tests against running service
 	@echo "Running API tests..."
@@ -330,4 +330,88 @@ terraform-setup: ## Complete Terraform setup for Datadog dashboard
 	else \
 		echo "✅ terraform.tfvars already exists"; \
 		echo "Run 'make terraform-init && make terraform-apply' to deploy"; \
+	fi
+
+# Load testing with Locust
+load-test: ## Run basic load test with Locust
+	@echo "Running basic load test..."
+	@cd load-testing && $(UV) run locust -f locustfile.py --host=http://localhost:8000 --users=10 --spawn-rate=2 --run-time=60s --headless --html=reports/basic-report.html --csv=reports/basic-results
+
+load-test-ui: ## Run load test with Locust web UI
+	@echo "Starting Locust web UI..."
+	@echo "Open http://localhost:8089 in your browser"
+	@cd load-testing && $(UV) run locust -f locustfile.py --host=http://localhost:8000
+
+load-test-smoke: ## Run quick smoke test
+	@echo "Running smoke test..."
+	@cd load-testing && $(UV) run locust -f locustfile.py --users=5 --spawn-rate=1 --run-time=30s --headless --html=reports/smoke-report.html
+
+load-test-volume: ## Run high-volume load test
+	@echo "Running high-volume test..."
+	@cd load-testing && $(UV) run locust -f locustfile.py --host=http://localhost:8000 --users=100 --spawn-rate=10 --run-time=300s --headless --html=reports/volume-report.html --csv=reports/volume-results
+
+load-test-banking: ## Run banking API load test
+	@echo "Running banking API test..."
+	@cd load-testing && $(UV) run locust -f locustfile.py --host=http://localhost:1080 --users=20 --spawn-rate=2 --run-time=120s --headless --html=reports/banking-report.html --csv=reports/banking-results
+
+load-test-failures: ## Run failure simulation test
+	@echo "Running failure simulation test..."
+	@cd load-testing && $(UV) run locust -f locustfile.py --host=http://localhost:8000 --users=15 --spawn-rate=2 --run-time=90s --headless --html=reports/failures-report.html --csv=reports/failures-results
+
+load-test-docker: ## Run distributed load test with Docker
+	@echo "Starting distributed load test with Docker..."
+	@cd load-testing && docker-compose -f docker-compose.locust.yml up --build
+
+load-test-stop: ## Stop Docker load test containers
+	@echo "Stopping load test containers..."
+	@cd load-testing && docker-compose -f docker-compose.locust.yml down --remove-orphans
+
+load-test-reports: ## Open latest load test reports
+	@echo "Opening load test reports..."
+	@if [ -f load-testing/reports/smoke-report.html ]; then \
+		open load-testing/reports/smoke-report.html || xdg-open load-testing/reports/smoke-report.html || echo "Report: load-testing/reports/smoke-report.html"; \
+	elif [ -f load-testing/reports/basic-report.html ]; then \
+		open load-testing/reports/basic-report.html || xdg-open load-testing/reports/basic-report.html || echo "Report: load-testing/reports/basic-report.html"; \
+	else \
+		echo "No reports found. Run a load test first."; \
+	fi
+
+load-test-clean: ## Clean load test reports
+	@echo "Cleaning load test reports..."
+	@rm -rf load-testing/reports/*
+	@echo "Reports cleaned."
+
+load-test-install: ## Install load testing dependencies (already included in UV dev dependencies)
+	@echo "Load testing dependencies are included in dev dependencies."
+	@echo "Run 'uv sync --dev' to install all development dependencies including Locust."
+
+# Authentication token generation
+generate-auth-tokens: ## Generate test authentication tokens
+	@echo "Generating authentication tokens..."
+	@$(UV) run python scripts/generate_auth_tokens.py --save-env --curl-examples
+
+generate-auth-simple: ## Generate simple test token
+	@echo "Generating simple auth token..."
+	@$(UV) run python scripts/generate_auth_tokens.py --type simple --count 1
+
+generate-auth-jwt: ## Generate JWT-like token
+	@echo "Generating JWT-like token..."
+	@$(UV) run python scripts/generate_auth_tokens.py --type jwt --count 1
+
+test-auth: ## Test authentication with generated token
+	@echo "Testing authentication..."
+	@if [ -f test_tokens.env ]; then \
+		source test_tokens.env && curl -s -X GET http://localhost:8000/health \
+		-H "Authorization: $$AUTH_TOKEN" | jq . || echo "Service not responding"; \
+	else \
+		echo "No tokens found. Run 'make generate-auth-tokens' first."; \
+	fi
+
+curl-examples: ## Show curl command examples with valid tokens
+	@echo "📋 Curl Examples:"
+	@if [ -f test_tokens.env ]; then \
+		echo "Using tokens from test_tokens.env"; \
+		$(UV) run python scripts/generate_auth_tokens.py --curl-examples; \
+	else \
+		echo "No tokens found. Run 'make generate-auth-tokens' first."; \
 	fi

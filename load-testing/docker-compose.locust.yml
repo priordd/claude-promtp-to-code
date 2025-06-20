@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  locust-master:
+    image: locustio/locust:2.30.0
+    ports:
+      - "8089:8089"
+    volumes:
+      - ./:/mnt/locust
+    command: >
+      -f /mnt/locust/locustfile.py
+      --master
+      --web-host=0.0.0.0
+      --web-port=8089
+      --expect-workers=2
+      --html=/mnt/locust/reports/report.html
+      --csv=/mnt/locust/reports/results
+    environment:
+      - LOCUST_HOST=http://payment-service:8000
+    networks:
+      - payment-service_default
+      - locust-network
+    depends_on:
+      - payment-service
+    
+  locust-worker-1:
+    image: locustio/locust:2.30.0
+    volumes:
+      - ./:/mnt/locust
+    command: >
+      -f /mnt/locust/locustfile.py
+      --worker
+      --master-host=locust-master
+    environment:
+      - LOCUST_HOST=http://payment-service:8000
+    networks:
+      - payment-service_default
+      - locust-network
+    depends_on:
+      - locust-master
+    
+  locust-worker-2:
+    image: locustio/locust:2.30.0
+    volumes:
+      - ./:/mnt/locust
+    command: >
+      -f /mnt/locust/locustfile.py
+      --worker
+      --master-host=locust-master
+    environment:
+      - LOCUST_HOST=http://payment-service:8000
+    networks:
+      - payment-service_default
+      - locust-network
+    depends_on:
+      - locust-master
+
+  # High-volume testing setup
+  locust-master-volume:
+    image: locustio/locust:2.30.0
+    ports:
+      - "8090:8089"
+    volumes:
+      - ./:/mnt/locust
+    command: >
+      -f /mnt/locust/locustfile.py
+      --master
+      --web-host=0.0.0.0
+      --web-port=8089
+      --expect-workers=4
+      --html=/mnt/locust/reports/volume-report.html
+      --csv=/mnt/locust/reports/volume-results
+      --users=100
+      --spawn-rate=10
+      --run-time=300s
+      --user-class=HighVolumePaymentUser
+    environment:
+      - LOCUST_HOST=http://payment-service:8000
+    networks:
+      - payment-service_default
+      - locust-network
+    depends_on:
+      - payment-service
+    profiles:
+      - volume-test
+
+  # Banking API specific testing
+  locust-banking:
+    image: locustio/locust:2.30.0
+    ports:
+      - "8091:8089"
+    volumes:
+      - ./:/mnt/locust
+    command: >
+      -f /mnt/locust/locustfile.py
+      --web-host=0.0.0.0
+      --web-port=8089
+      --html=/mnt/locust/reports/banking-report.html
+      --csv=/mnt/locust/reports/banking-results
+      --user-class=BankingAPIUser
+    environment:
+      - LOCUST_HOST=http://mockserver:1080
+    networks:
+      - payment-service_default
+      - locust-network
+    depends_on:
+      - mockserver
+    profiles:
+      - banking-test
+
+  # Failure simulation testing
+  locust-failures:
+    image: locustio/locust:2.30.0
+    ports:
+      - "8092:8089"
+    volumes:
+      - ./:/mnt/locust
+    command: >
+      -f /mnt/locust/locustfile.py
+      --web-host=0.0.0.0
+      --web-port=8089
+      --html=/mnt/locust/reports/failure-report.html
+      --csv=/mnt/locust/reports/failure-results
+      --user-class=FailureSimulationUser
+    environment:
+      - LOCUST_HOST=http://payment-service:8000
+    networks:
+      - payment-service_default
+      - locust-network
+    depends_on:
+      - payment-service
+    profiles:
+      - failure-test
+
+networks:
+  locust-network:
+    driver: bridge
+  payment-service_default:
+    external: true

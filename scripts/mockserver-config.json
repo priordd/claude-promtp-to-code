@@ -1,6 +1,23 @@
 [
   {
     "httpRequest": {
+      "method": "GET",
+      "path": "/health"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": ["application/json"]
+      },
+      "body": {
+        "status": "healthy",
+        "service": "banking-api-mock",
+        "timestamp": "2024-01-01T12:00:00Z"
+      }
+    }
+  },
+  {
+    "httpRequest": {
       "method": "POST",
       "path": "/api/v1/authorize",
       "headers": {
@@ -88,6 +105,64 @@
         "error": "card_declined",
         "message": "Your card was declined",
         "decline_code": "generic_decline",
+        "timestamp": "2024-01-01T12:00:00Z"
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/v1/transactions/{id}",
+      "pathParameters": {
+        "id": [".*"]
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": ["application/json"]
+      },
+      "body": {
+        "transaction_id": "{{pathParameters.id.[0]}}",
+        "status": "completed",
+        "amount": 1000,
+        "currency": "USD",
+        "timestamp": "2024-01-01T12:00:00Z"
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/v1/settlements"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": ["application/json"]
+      },
+      "body": {
+        "settlements": [],
+        "total_count": 0,
+        "page": 1,
+        "per_page": 50
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "POST",
+      "path": "/api/v1/batch/authorize"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": ["application/json"]
+      },
+      "body": {
+        "batch_id": "batch_123456789",
+        "status": "processing",
+        "total_transactions": 1,
         "timestamp": "2024-01-01T12:00:00Z"
       }
     }

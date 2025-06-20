@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     dd_api_key: Optional[str] = None
     dd_app_key: Optional[str] = None
     dd_service: str = "payment-service"
-    dd_env: str = "development"
+    dd_env: str = "dev"
     dd_version: str = "0.1.0"
     dd_trace_enabled: bool = True
     dd_logs_enabled: bool = True
@@ -50,10 +50,7 @@ class Settings(BaseSettings):
     cache_ttl: int = 300
     cache_max_size: int = 1000
 
-    model_config = ConfigDict(
-        env_file=".env",
-        case_sensitive=False
-    )
+    model_config = ConfigDict(env_file=".env", case_sensitive=False)
 
 
 # Global settings instance

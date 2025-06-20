@@ -210,8 +210,6 @@ def setup_test_environment(monkeypatch):
     monkeypatch.setenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
     monkeypatch.setenv("DD_TRACE_ENABLED", "false")
     monkeypatch.setenv("METRICS_ENABLED", "false")
-    # Disable OpenTelemetry configuration that conflicts with Datadog
-    monkeypatch.delenv("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", raising=False)
 
 
 @pytest.fixture

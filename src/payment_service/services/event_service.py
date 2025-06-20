@@ -31,6 +31,10 @@ class EventService:
                     retries=settings.kafka_retry_attempts,
                     max_in_flight_requests_per_connection=1,
                     enable_idempotence=True,
+                    # Add timeout configurations for health checks
+                    metadata_max_age_ms=30000,  # 30 seconds
+                    request_timeout_ms=10000,   # 10 seconds
+                    api_version_auto_timeout_ms=5000,  # 5 seconds
                 )
                 self.logger.info("Kafka producer initialized")
             except Exception as e:
@@ -106,10 +110,29 @@ class EventService:
     async def health_check(self) -> bool:
         """Check Kafka connectivity."""
         try:
-            producer = self._get_producer()
-            # Check if we can get metadata (simple connectivity test)
-            metadata = producer.list_consumer_group_offsets()
+            # Simple and reliable health check - just try to create a producer
+            # If it succeeds, Kafka is accessible
+            from kafka import KafkaProducer
+            import time
+            
+            start_time = time.time()
+            
+            # Create producer with minimal configuration and short timeouts
+            health_producer = KafkaProducer(
+                bootstrap_servers=settings.kafka_bootstrap_servers.split(","),
+                api_version_auto_timeout_ms=3000,
+                connections_max_idle_ms=3000,
+                request_timeout_ms=3000,
+            )
+            
+            # If we get here, Kafka connection worked
+            elapsed = time.time() - start_time
+            self.logger.debug("Kafka health check completed", elapsed_seconds=elapsed)
+            
+            # Clean up
+            health_producer.close(timeout=1)
             return True
+                
         except Exception as e:
-            self.logger.warning("Kafka health check failed", error=str(e))
+            self.logger.debug("Kafka health check failed", error=str(e))
             return False

@@ -325,3 +325,11 @@ terraform/override.tf
 terraform/override.tf.json
 terraform/*_override.tf
 terraform/*_override.tf.json
+
+# Load Testing
+load-testing/reports/
+load-testing/.env
+load-testing/*.html
+load-testing/*.csv
+load-testing/__pycache__/
+load-testing/*.pyc

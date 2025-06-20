@@ -64,6 +64,7 @@ dev = [
     "black>=25.1.0",
     "faker>=37.4.0",
     "httpx>=0.28.1",
+    "locust>=2.37.10",
     "mypy>=1.16.1",
     "pytest>=8.4.1",
     "pytest-asyncio>=1.0.0",
