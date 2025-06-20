@@ -1,7 +1,7 @@
 # Payment Service Makefile
 # Provides common development tasks for the payment service
 
-.PHONY: help install dev test lint format docker-build docker-up docker-down docker-logs test-api clean
+.PHONY: help install dev test lint format docker-build docker-up docker-down docker-logs test-api clean terraform-init terraform-plan terraform-apply terraform-destroy
 
 # Variables
 PYTHON := python3
@@ -284,3 +284,50 @@ debug: ## Show debug information
 	@echo "Docker status: $$(docker info >/dev/null 2>&1 && echo 'Running' || echo 'Not running')"
 	@echo "Services status:"
 	@$(DOCKER_COMPOSE) ps 2>/dev/null || echo "No services running"
+
+# Terraform operations for Datadog dashboard
+terraform-init: ## Initialize Terraform for Datadog dashboard
+	@echo "Initializing Terraform..."
+	@cd terraform && terraform init
+
+terraform-plan: ## Plan Terraform deployment for Datadog dashboard
+	@echo "Planning Terraform deployment..."
+	@if [ ! -f terraform/terraform.tfvars ]; then \
+		echo "❌ terraform.tfvars not found. Copy terraform.tfvars.example and update with your Datadog keys."; \
+		exit 1; \
+	fi
+	@cd terraform && terraform plan
+
+terraform-apply: ## Apply Terraform to create Datadog dashboard
+	@echo "Applying Terraform configuration..."
+	@if [ ! -f terraform/terraform.tfvars ]; then \
+		echo "❌ terraform.tfvars not found. Copy terraform.tfvars.example and update with your Datadog keys."; \
+		exit 1; \
+	fi
+	@cd terraform && terraform apply
+	@echo "✅ Datadog dashboard created successfully!"
+
+terraform-destroy: ## Destroy Datadog dashboard
+	@echo "Destroying Datadog dashboard..."
+	@cd terraform && terraform destroy
+
+terraform-output: ## Show Terraform outputs (dashboard URL)
+	@echo "Terraform outputs:"
+	@cd terraform && terraform output
+
+terraform-setup: ## Complete Terraform setup for Datadog dashboard
+	@echo "Setting up Datadog dashboard with Terraform..."
+	@if [ ! -f terraform/terraform.tfvars ]; then \
+		echo "📋 Creating terraform.tfvars from example..."; \
+		cp terraform/terraform.tfvars.example terraform/terraform.tfvars; \
+		echo "✅ Created terraform/terraform.tfvars"; \
+		echo "⚠️  Please edit terraform/terraform.tfvars with your actual Datadog API and App keys"; \
+		echo "   You can find these at: https://app.datadoghq.com/organization-settings/api-keys"; \
+		echo ""; \
+		echo "After updating the keys, run:"; \
+		echo "  make terraform-init"; \
+		echo "  make terraform-apply"; \
+	else \
+		echo "✅ terraform.tfvars already exists"; \
+		echo "Run 'make terraform-init && make terraform-apply' to deploy"; \
+	fi

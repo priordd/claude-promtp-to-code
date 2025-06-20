@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional, AsyncGenerator
 import psycopg2
 import psycopg2.extras
+import psycopg2.pool
 import structlog
 
 from payment_service.config import settings

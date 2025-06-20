@@ -106,7 +106,7 @@ services:
       - DD_API_KEY=${DD_API_KEY:-dummy-key}
       - DD_SITE=datadoghq.com
       - DD_HOSTNAME=payment-service-dev
-      - DD_TAGS=env:development,service:payment-service
+      - DD_TAGS=env:dev,service:payment-service
       - DD_APM_ENABLED=true
       - DD_APM_NON_LOCAL_TRAFFIC=true
       - DD_LOGS_ENABLED=true

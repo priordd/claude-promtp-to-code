@@ -84,7 +84,7 @@ instances:
             type: tag
         tags:
           - service:payment-service
-          - env:development
+          - env:dev
       
       - metric_prefix: payment.refunds
         query: |
@@ -107,7 +107,7 @@ instances:
             type: gauge
         tags:
           - service:payment-service
-          - env:development
+          - env:dev
       
       - metric_prefix: payment.database
         query: |
@@ -137,7 +137,7 @@ instances:
             type: gauge
         tags:
           - service:payment-service
-          - env:development
+          - env:dev
     
     ## Table and Index Monitoring
     table_count_limit: 200
@@ -145,7 +145,7 @@ instances:
     
     ## Tagging
     tags:
-      - env:development
+      - env:dev
       - service:payment-service
       - database:payment_db
       - component:postgresql
@@ -166,8 +166,8 @@ instances:
     
     ## Lock Monitoring
     collect_blocker_metrics: true
-    collect_wal_metrics: true
-    data_directory: /var/lib/postgresql/data
+    collect_wal_metrics: false
+    # data_directory: /var/lib/postgresql/data  # Disabled WAL metrics to avoid container path issues
     
     ## Connection Pool Monitoring
     collect_connection_metrics: true
