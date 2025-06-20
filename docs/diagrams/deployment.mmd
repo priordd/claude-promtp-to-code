@@ -1,0 +1,44 @@
+graph TB
+    subgraph "Development Environment (Docker Compose)"
+        subgraph "Application Tier"
+            AppContainer[payment-service<br/>FastAPI Application<br/>Port: 8000]
+        end
+        
+        subgraph "Data Tier"
+            PostgresContainer[postgres<br/>PostgreSQL 16<br/>Port: 5432]
+            KafkaContainer[kafka<br/>Apache Kafka<br/>Port: 9092]
+            ZookeeperContainer[zookeeper<br/>Kafka Coordination<br/>Port: 2181]
+        end
+        
+        subgraph "External Services"
+            MockServerContainer[mockserver<br/>Banking API Mock<br/>Port: 1080]
+            DatadogContainer[datadog-agent<br/>Monitoring Agent<br/>Port: 8126]
+        end
+        
+        subgraph "Volumes"
+            PostgresData[(postgres_data<br/>Persistent Storage)]
+        end
+    end
+    
+    Developer[Developer<br/>Local Machine]
+    
+    Developer -->|HTTP requests| AppContainer
+    AppContainer -->|SQL queries| PostgresContainer
+    AppContainer -->|Events| KafkaContainer
+    AppContainer -->|HTTP requests| MockServerContainer
+    AppContainer -->|Metrics/Traces| DatadogContainer
+    
+    PostgresContainer -->|Data persistence| PostgresData
+    KafkaContainer -->|Coordination| ZookeeperContainer
+    
+    classDef app fill:#1976d2,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef data fill:#388e3c,stroke:#1b5e20,stroke-width:2px,color:#fff
+    classDef external fill:#f57c00,stroke:#e65100,stroke-width:2px,color:#fff
+    classDef storage fill:#7b1fa2,stroke:#4a148c,stroke-width:2px,color:#fff
+    classDef person fill:#08427b,stroke:#052e56,stroke-width:2px,color:#fff
+    
+    class AppContainer app
+    class PostgresContainer,KafkaContainer,ZookeeperContainer data
+    class MockServerContainer,DatadogContainer external
+    class PostgresData storage
+    class Developer person

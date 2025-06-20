@@ -1,0 +1,244 @@
+# Payment Service Makefile
+# Provides common development tasks for the payment service
+
+.PHONY: help install dev test lint format docker-build docker-up docker-down docker-logs test-api clean
+
+# Variables
+PYTHON := python3
+UV := uv
+DOCKER_COMPOSE := docker-compose
+SERVICE_NAME := payment-service
+
+# Default target
+help: ## Show this help message
+	@echo "Payment Service Development Commands"
+	@echo "===================================="
+	@echo ""
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+# Development setup
+install: ## Install dependencies with uv
+	@echo "Installing dependencies..."
+	$(UV) pip install -e .[dev]
+
+dev: install ## Setup development environment
+	@echo "Setting up development environment..."
+	@if [ ! -f .env ]; then cp .env.example .env; echo "Created .env file from template"; fi
+	@echo "Development environment ready!"
+
+# Code quality
+lint: ## Run code linting
+	@echo "Running linting..."
+	ruff check src/ tests/
+	mypy src/
+
+format: ## Format code
+	@echo "Formatting code..."
+	black src/ tests/
+	ruff check --fix src/ tests/
+
+# Testing
+test: ## Run unit and integration tests
+	@echo "Running tests..."
+	pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=html
+
+test-unit: ## Run only unit tests
+	@echo "Running unit tests..."
+	pytest tests/unit/ -v
+
+test-integration: ## Run only integration tests
+	@echo "Running integration tests..."
+	pytest tests/integration/ -v
+
+test-api: ## Run API tests against running service
+	@echo "Running API tests..."
+	@if [ ! -x ./scripts/test_api.sh ]; then chmod +x ./scripts/test_api.sh; fi
+	./scripts/test_api.sh
+
+# Docker operations
+docker-build: ## Build Docker image
+	@echo "Building Docker image..."
+	docker build -t $(SERVICE_NAME) .
+
+docker-up: ## Start all services with docker-compose
+	@echo "Starting services..."
+	$(DOCKER_COMPOSE) up -d
+	@echo "Services started. Use 'make docker-logs' to view logs."
+	@echo "API will be available at http://localhost:8000"
+	@echo "Use 'make test-api' to run API tests."
+
+docker-down: ## Stop all services
+	@echo "Stopping services..."
+	$(DOCKER_COMPOSE) down
+
+docker-restart: ## Restart all services
+	@echo "Restarting services..."
+	$(DOCKER_COMPOSE) restart
+
+docker-logs: ## View service logs
+	@echo "Viewing logs (Press Ctrl+C to exit)..."
+	$(DOCKER_COMPOSE) logs -f
+
+docker-logs-service: ## View logs for payment service only
+	@echo "Viewing payment service logs..."
+	$(DOCKER_COMPOSE) logs -f payment-service
+
+docker-shell: ## Open shell in payment service container
+	@echo "Opening shell in payment service container..."
+	$(DOCKER_COMPOSE) exec payment-service /bin/bash
+
+docker-psql: ## Open PostgreSQL shell
+	@echo "Opening PostgreSQL shell..."
+	$(DOCKER_COMPOSE) exec postgres psql -U payment_user -d payment_db
+
+# Database operations
+db-migrate: ## Run database migrations (placeholder)
+	@echo "Running database migrations..."
+	@echo "Note: Migrations are currently handled by init_db.sql in docker-compose"
+
+db-seed: ## Seed database with test data
+	@echo "Seeding database with test data..."
+	$(DOCKER_COMPOSE) exec postgres psql -U payment_user -d payment_db -f /docker-entrypoint-initdb.d/init_db.sql
+
+# Development workflow
+run-local: ## Run service locally (without Docker)
+	@echo "Running service locally..."
+	@echo "Make sure PostgreSQL and Kafka are running (use docker-compose up postgres kafka zookeeper)"
+	uvicorn payment_service.main:app --host 0.0.0.0 --port 8000 --reload
+
+dev-setup: docker-up ## Complete development setup
+	@echo "Waiting for services to be ready..."
+	@sleep 10
+	@echo "Running initial tests..."
+	$(MAKE) test-api
+	@echo ""
+	@echo "Development environment is ready!"
+	@echo "- API: http://localhost:8000"
+	@echo "- Health: http://localhost:8000/health"
+	@echo "- Docs: http://localhost:8000/docs"
+
+# Monitoring and debugging
+status: ## Check service status
+	@echo "Checking service status..."
+	@curl -s http://localhost:8000/health | jq . || echo "Service not responding"
+
+metrics: ## View service metrics (placeholder)
+	@echo "Service metrics:"
+	@curl -s http://localhost:8000/health | jq '.services' || echo "Service not responding"
+
+# Cleanup
+clean: ## Clean up generated files
+	@echo "Cleaning up..."
+	rm -rf __pycache__/
+	rm -rf .pytest_cache/
+	rm -rf htmlcov/
+	rm -rf .coverage
+	rm -rf *.egg-info/
+	find . -type d -name __pycache__ -delete
+	find . -type f -name "*.pyc" -delete
+
+clean-docker: ## Clean up Docker resources
+	@echo "Cleaning up Docker resources..."
+	$(DOCKER_COMPOSE) down -v --remove-orphans
+	docker system prune -f
+
+# Production operations
+prod-check: ## Run production readiness checks
+	@echo "Running production readiness checks..."
+	@echo "1. Linting..."
+	$(MAKE) lint
+	@echo "2. Testing..."
+	$(MAKE) test
+	@echo "3. Building Docker image..."
+	$(MAKE) docker-build
+	@echo "4. Security check..."
+	@echo "Note: Add security scanning tools here"
+	@echo "Production readiness check complete!"
+
+deploy-staging: ## Deploy to staging environment (placeholder)
+	@echo "Deploying to staging environment..."
+	@echo "Note: Add staging deployment commands here"
+
+deploy-prod: ## Deploy to production environment (placeholder)
+	@echo "Deploying to production environment..."
+	@echo "Note: Add production deployment commands here"
+
+# Documentation
+docs: ## Generate and serve documentation
+	@echo "Generating documentation..."
+	@echo "API documentation available at: http://localhost:8000/docs (when service is running)"
+
+diagrams: ## Generate C4 diagrams as PNG images
+	@echo "Generating C4 diagrams..."
+	@if [ ! -x ./scripts/generate_diagrams.sh ]; then chmod +x ./scripts/generate_diagrams.sh; fi
+	./scripts/generate_diagrams.sh
+
+diagrams-clean: ## Clean and regenerate all diagrams
+	@echo "Cleaning and regenerating diagrams..."
+	@if [ ! -x ./scripts/generate_diagrams.sh ]; then chmod +x ./scripts/generate_diagrams.sh; fi
+	./scripts/generate_diagrams.sh --clean
+
+# Utility targets
+env-check: ## Check environment variables
+	@echo "Environment Configuration:"
+	@echo "========================="
+	@if [ -f .env ]; then \
+		echo "✓ .env file exists"; \
+		grep -E "^[A-Z_]+" .env | head -10 || true; \
+	else \
+		echo "✗ .env file missing (run 'make dev' to create)"; \
+	fi
+
+deps-check: ## Check if dependencies are installed
+	@echo "Dependency Check:"
+	@echo "================="
+	@command -v $(UV) >/dev/null 2>&1 && echo "✓ uv installed" || echo "✗ uv not installed"
+	@command -v docker >/dev/null 2>&1 && echo "✓ Docker installed" || echo "✗ Docker not installed"
+	@command -v $(DOCKER_COMPOSE) >/dev/null 2>&1 && echo "✓ docker-compose installed" || echo "✗ docker-compose not installed"
+	@command -v jq >/dev/null 2>&1 && echo "✓ jq installed" || echo "✗ jq not installed"
+	@command -v curl >/dev/null 2>&1 && echo "✓ curl installed" || echo "✗ curl not installed"
+
+# Workflow shortcuts
+quick-test: docker-up ## Quick development test cycle
+	@echo "Running quick test cycle..."
+	@sleep 5
+	$(MAKE) test-api
+
+full-test: ## Full test suite including Docker rebuild
+	@echo "Running full test suite..."
+	$(MAKE) clean
+	$(MAKE) docker-build
+	$(MAKE) docker-up
+	@sleep 10
+	$(MAKE) test
+	$(MAKE) test-api
+
+# Performance testing
+perf-test: ## Run performance tests (placeholder)
+	@echo "Running performance tests..."
+	@echo "Note: Add performance testing tools here"
+
+load-test: ## Run load tests (placeholder)
+	@echo "Running load tests..."
+	@echo "Note: Add load testing tools here"
+
+# Security
+security-scan: ## Run security scans (placeholder)
+	@echo "Running security scans..."
+	@echo "Note: Add security scanning tools here"
+
+# Version management
+version: ## Show current version
+	@echo "Payment Service Version:"
+	@grep version pyproject.toml | head -1
+
+# Development helpers
+debug: ## Show debug information
+	@echo "Debug Information:"
+	@echo "=================="
+	@echo "Python version: $$(python --version)"
+	@echo "Current directory: $$(pwd)"
+	@echo "Git branch: $$(git branch --show-current 2>/dev/null || echo 'Not a git repository')"
+	@echo "Docker status: $$(docker info >/dev/null 2>&1 && echo 'Running' || echo 'Not running')"
+	@echo "Services status:"
+	@$(DOCKER_COMPOSE) ps 2>/dev/null || echo "No services running"

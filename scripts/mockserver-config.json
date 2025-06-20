@@ -1,0 +1,95 @@
+[
+  {
+    "httpRequest": {
+      "method": "POST",
+      "path": "/api/v1/authorize",
+      "headers": {
+        "Content-Type": ["application/json"]
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": ["application/json"]
+      },
+      "body": {
+        "authorization_id": "auth_123456789",
+        "status": "approved",
+        "amount": 1000,
+        "currency": "USD",
+        "message": "Payment authorized successfully",
+        "timestamp": "2024-01-01T12:00:00Z"
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "POST",
+      "path": "/api/v1/capture",
+      "headers": {
+        "Content-Type": ["application/json"]
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": ["application/json"]
+      },
+      "body": {
+        "capture_id": "cap_123456789",
+        "status": "captured",
+        "amount": 1000,
+        "currency": "USD",
+        "message": "Payment captured successfully",
+        "timestamp": "2024-01-01T12:00:00Z"
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "POST",
+      "path": "/api/v1/refund",
+      "headers": {
+        "Content-Type": ["application/json"]
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": ["application/json"]
+      },
+      "body": {
+        "refund_id": "ref_123456789",
+        "status": "refunded",
+        "amount": 1000,
+        "currency": "USD",
+        "message": "Refund processed successfully",
+        "timestamp": "2024-01-01T12:00:00Z"
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "POST",
+      "path": "/api/v1/authorize",
+      "headers": {
+        "Content-Type": ["application/json"]
+      },
+      "body": {
+        "card_number": "4000000000000002"
+      }
+    },
+    "httpResponse": {
+      "statusCode": 402,
+      "headers": {
+        "Content-Type": ["application/json"]
+      },
+      "body": {
+        "error": "card_declined",
+        "message": "Your card was declined",
+        "decline_code": "generic_decline",
+        "timestamp": "2024-01-01T12:00:00Z"
+      }
+    }
+  }
+]

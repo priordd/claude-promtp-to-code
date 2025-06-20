@@ -1,0 +1,22 @@
+graph TB
+    Customer[Customer<br/>Person using payment system]
+    Merchant[Merchant<br/>Business accepting payments]
+    
+    PaymentService[Payment Processing Service<br/>Handles payment transactions, refunds, and status tracking]
+    
+    BankingAPI[Banking API<br/>External payment processor]
+    DatadogAPI[Datadog<br/>Monitoring and observability]
+    
+    Customer -->|Makes payments| PaymentService
+    Merchant -->|Processes payments<br/>Views transactions<br/>Initiates refunds| PaymentService
+    
+    PaymentService -->|Authorizes & captures payments<br/>Processes refunds| BankingAPI
+    PaymentService -->|Sends metrics, traces, logs| DatadogAPI
+    
+    classDef person fill:#08427b,stroke:#052e56,stroke-width:2px,color:#fff
+    classDef system fill:#1168bd,stroke:#0b4884,stroke-width:2px,color:#fff
+    classDef external fill:#999999,stroke:#666666,stroke-width:2px,color:#fff
+    
+    class Customer,Merchant person
+    class PaymentService system
+    class BankingAPI,DatadogAPI external

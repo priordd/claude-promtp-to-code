@@ -1,0 +1,33 @@
+sequenceDiagram
+    participant Client
+    participant API as FastAPI App
+    participant PaymentService
+    participant BankingAPI
+    participant Database
+    participant Kafka
+    participant Cache
+    participant Datadog
+    
+    Client->>API: POST /api/v1/payments/process
+    API->>API: Validate auth token
+    API->>PaymentService: process_payment()
+    
+    PaymentService->>PaymentService: validate_merchant()
+    PaymentService->>Database: create_transaction()
+    PaymentService->>BankingAPI: authorize_payment()
+    BankingAPI-->>PaymentService: authorization_result
+    
+    PaymentService->>Database: update_authorization()
+    PaymentService->>BankingAPI: capture_payment()
+    BankingAPI-->>PaymentService: capture_result
+    
+    PaymentService->>Database: update_capture()
+    PaymentService->>Kafka: publish_event()
+    PaymentService->>Database: create_audit_log()
+    PaymentService->>Cache: cache_status()
+    PaymentService->>Datadog: send_metrics()
+    
+    PaymentService-->>API: PaymentResponse
+    API-->>Client: HTTP 200 + response
+    
+    Note over Client,Datadog: All operations include correlation ID for tracing

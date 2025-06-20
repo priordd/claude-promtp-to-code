@@ -1,0 +1,36 @@
+graph TB
+    subgraph "Payment Processing System"
+        WebApp[FastAPI Web Application<br/>Python, FastAPI<br/>Handles HTTP requests, authentication,<br/>payment processing logic]
+        
+        Database[PostgreSQL Database<br/>Stores transactions, refunds,<br/>audit logs, encrypted card data]
+        
+        MessageBus[Kafka Message Bus<br/>Event streaming for<br/>payment events and audit trail]
+        
+        Cache[In-Memory Cache<br/>Python threading<br/>Caches payment status<br/>and session data]
+    end
+    
+    Customer[Customer]
+    Merchant[Merchant]
+    BankingAPI[Banking API<br/>External Service]
+    MockServer[MockServer<br/>Banking API Simulator]
+    DatadogAgent[Datadog Agent<br/>Monitoring Container]
+    
+    Customer -->|HTTPS/JSON| WebApp
+    Merchant -->|HTTPS/JSON| WebApp
+    
+    WebApp -->|SQL queries<br/>ACID transactions| Database
+    WebApp -->|Publishes events| MessageBus
+    WebApp -->|Get/Set cached data| Cache
+    WebApp -->|HTTP requests<br/>Payment operations| BankingAPI
+    WebApp -->|HTTP requests<br/>Development/Testing| MockServer
+    WebApp -->|Sends traces, metrics| DatadogAgent
+    
+    classDef person fill:#08427b,stroke:#052e56,stroke-width:2px,color:#fff
+    classDef container fill:#1168bd,stroke:#0b4884,stroke-width:2px,color:#fff
+    classDef database fill:#2e7d32,stroke:#1b5e20,stroke-width:2px,color:#fff
+    classDef external fill:#999999,stroke:#666666,stroke-width:2px,color:#fff
+    
+    class Customer,Merchant person
+    class WebApp,Cache container
+    class Database,MessageBus database
+    class BankingAPI,MockServer,DatadogAgent external

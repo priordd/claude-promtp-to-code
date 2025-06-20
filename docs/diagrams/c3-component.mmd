@@ -1,0 +1,70 @@
+graph TB
+    subgraph "FastAPI Web Application"
+        subgraph "API Layer"
+            PaymentController[Payment Controller<br/>Handles payment processing<br/>endpoints and validation]
+            StatusController[Status Controller<br/>Handles payment status<br/>and lookup endpoints]
+            RefundController[Refund Controller<br/>Handles refund processing<br/>and management]
+            HealthController[Health Controller<br/>System health checks<br/>and diagnostics]
+        end
+        
+        subgraph "Service Layer"
+            PaymentService[Payment Service<br/>Core payment processing<br/>business logic]
+            BankingService[Banking Service<br/>External payment API<br/>integration]
+            EventService[Event Service<br/>Kafka event publishing<br/>and management]
+            EncryptionService[Encryption Service<br/>Card data encryption<br/>and security]
+            CacheService[Cache Service<br/>In-memory caching<br/>with TTL support]
+        end
+        
+        subgraph "Data Layer"
+            DatabaseManager[Database Manager<br/>Connection pooling<br/>and query execution]
+            Models[Pydantic Models<br/>Request/response validation<br/>and serialization]
+        end
+        
+        subgraph "Utils"
+            Monitoring[Monitoring Utils<br/>Datadog integration<br/>and metrics]
+            Security[Security Utils<br/>Authentication and<br/>authorization]
+            Logging[Logging Utils<br/>Structured logging<br/>and correlation]
+        end
+    end
+    
+    External[External Systems]
+    Database[PostgreSQL]
+    Kafka[Kafka]
+    Cache[Memory Cache]
+    
+    PaymentController -->|Uses| PaymentService
+    StatusController -->|Uses| PaymentService
+    RefundController -->|Uses| PaymentService
+    HealthController -->|Uses| PaymentService
+    HealthController -->|Uses| BankingService
+    
+    PaymentService -->|Uses| BankingService
+    PaymentService -->|Uses| EventService
+    PaymentService -->|Uses| EncryptionService
+    PaymentService -->|Uses| CacheService
+    PaymentService -->|Uses| DatabaseManager
+    
+    BankingService -->|HTTP requests| External
+    EventService -->|Publishes events| Kafka
+    DatabaseManager -->|SQL queries| Database
+    CacheService -->|Read/Write| Cache
+    
+    PaymentController -->|Uses| Models
+    StatusController -->|Uses| Models
+    RefundController -->|Uses| Models
+    
+    PaymentService -->|Uses| Monitoring
+    PaymentController -->|Uses| Security
+    PaymentService -->|Uses| Logging
+    
+    classDef controller fill:#1976d2,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef service fill:#388e3c,stroke:#1b5e20,stroke-width:2px,color:#fff
+    classDef data fill:#f57c00,stroke:#e65100,stroke-width:2px,color:#fff
+    classDef utils fill:#7b1fa2,stroke:#4a148c,stroke-width:2px,color:#fff
+    classDef external fill:#999999,stroke:#666666,stroke-width:2px,color:#fff
+    
+    class PaymentController,StatusController,RefundController,HealthController controller
+    class PaymentService,BankingService,EventService,EncryptionService,CacheService service
+    class DatabaseManager,Models data
+    class Monitoring,Security,Logging utils
+    class External,Database,Kafka,Cache external

@@ -1,0 +1,46 @@
+graph TB
+    subgraph "Security Layers"
+        subgraph "Transport Security"
+            HTTPS[HTTPS/TLS<br/>Encrypted communication]
+            AuthHeaders[Authorization Headers<br/>Bearer token authentication]
+        end
+        
+        subgraph "Application Security"
+            InputValidation[Input Validation<br/>Pydantic models<br/>Field constraints]
+            Authentication[Authentication<br/>Token validation<br/>User identification]
+            Authorization[Authorization<br/>Resource access control]
+        end
+        
+        subgraph "Data Security"
+            CardEncryption[Card Data Encryption<br/>AES encryption<br/>Secure key management]
+            DatabaseSecurity[Database Security<br/>Parameterized queries<br/>Connection pooling]
+            AuditLogging[Audit Logging<br/>Complete event trail<br/>Compliance tracking]
+        end
+        
+        subgraph "Infrastructure Security"
+            ContainerSecurity[Container Security<br/>Non-root user<br/>Minimal attack surface]
+            NetworkSecurity[Network Security<br/>Internal communication<br/>Service isolation]
+            SecretManagement[Secret Management<br/>Environment variables<br/>No hardcoded secrets]
+        end
+    end
+    
+    Request[Incoming Request] -->|1| HTTPS
+    HTTPS -->|2| AuthHeaders
+    AuthHeaders -->|3| InputValidation
+    InputValidation -->|4| Authentication
+    Authentication -->|5| Authorization
+    Authorization -->|6| CardEncryption
+    CardEncryption -->|7| DatabaseSecurity
+    DatabaseSecurity -->|8| AuditLogging
+    
+    classDef transport fill:#1976d2,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef application fill:#388e3c,stroke:#1b5e20,stroke-width:2px,color:#fff
+    classDef data fill:#f57c00,stroke:#e65100,stroke-width:2px,color:#fff
+    classDef infrastructure fill:#7b1fa2,stroke:#4a148c,stroke-width:2px,color:#fff
+    classDef flow fill:#999999,stroke:#666666,stroke-width:2px,color:#fff
+    
+    class HTTPS,AuthHeaders transport
+    class InputValidation,Authentication,Authorization application
+    class CardEncryption,DatabaseSecurity,AuditLogging data
+    class ContainerSecurity,NetworkSecurity,SecretManagement infrastructure
+    class Request flow
