@@ -20,15 +20,13 @@ class DatadogIntegration:
         """Setup Datadog tracing and monitoring."""
         try:
             import ddtrace
-            from ddtrace import patch_all
+            # Use modern ddtrace.auto instead of deprecated patch_all
+            import ddtrace.auto  # This replaces patch_all()
 
             # Configure Datadog
             ddtrace.config.service = settings.dd_service
             ddtrace.config.env = settings.dd_env
             ddtrace.config.version = settings.dd_version
-
-            # Auto-patch common libraries
-            patch_all()
 
             # Configure specific integrations
             ddtrace.config.fastapi["service_name"] = settings.dd_service

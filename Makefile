@@ -54,15 +54,15 @@ format: ## Format code
 # Testing
 test: ## Run unit and integration tests
 	@echo "Running tests..."
-	$(UV) run pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=html
+	unset OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE && $(UV) run pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=html
 
 test-unit: ## Run only unit tests
 	@echo "Running unit tests..."
-	$(UV) run pytest tests/unit/ -v
+	unset OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE && $(UV) run pytest tests/unit/ -v
 
 test-integration: ## Run only integration tests
 	@echo "Running integration tests..."
-	$(UV) run pytest tests/integration/ -v
+	unset OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE && $(UV) run pytest tests/integration/ -v
 
 test-api: ## Run API tests against running service
 	@echo "Running API tests..."

@@ -1,6 +1,7 @@
 """Configuration management for the payment service."""
 
 from typing import Optional
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
@@ -49,9 +50,10 @@ class Settings(BaseSettings):
     cache_ttl: int = 300
     cache_max_size: int = 1000
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    model_config = ConfigDict(
+        env_file=".env",
+        case_sensitive=False
+    )
 
 
 # Global settings instance
