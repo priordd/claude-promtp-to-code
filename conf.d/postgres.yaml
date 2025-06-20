@@ -1,0 +1,173 @@
+## Datadog PostgreSQL Database Monitoring Configuration
+## This file configures the Datadog agent to monitor PostgreSQL with Database Monitoring (DBM)
+
+init_config:
+
+instances:
+  - host: postgres
+    port: 5432
+    username: datadog
+    password: datadog_password
+    dbname: payment_db
+    
+    ## Database Monitoring Configuration
+    dbm: true
+    
+    ## Query Metrics Collection
+    query_metrics:
+      enabled: true
+      run_sync: true
+      collection_interval: 10
+    
+    ## Query Samples Collection
+    query_samples:
+      enabled: true
+      run_sync: true
+      collection_interval: 1
+    
+    ## Query Activity Collection
+    query_activity:
+      enabled: true
+      collection_interval: 10
+    
+    ## Settings Collection
+    settings:
+      enabled: true
+      collection_interval: 600
+    
+    ## Schema Collection
+    schemas:
+      enabled: true
+      collection_interval: 600
+    
+    ## Deep Database Monitoring
+    deep_database_monitoring: true
+    
+    ## Performance Schema Settings
+    performance_schema:
+      enabled: true
+      max_sql_text_length: 4096
+    
+    ## Connection Settings
+    application_name: datadog-agent
+    
+    ## SSL Configuration (uncomment for production)
+    # ssl_mode: require
+    # ssl_cert: /path/to/client-cert.pem
+    # ssl_key: /path/to/client-key.pem
+    # ssl_ca: /path/to/ca-cert.pem
+    
+    ## Custom Queries for Payment Service Monitoring
+    custom_queries:
+      - metric_prefix: payment.service
+        query: |
+          SELECT 
+            status,
+            COUNT(*) as count,
+            AVG(amount) as avg_amount,
+            SUM(amount) as total_amount,
+            DATE_TRUNC('minute', created_at) as time_bucket
+          FROM transactions 
+          WHERE created_at > NOW() - INTERVAL '1 hour'
+          GROUP BY status, time_bucket
+          ORDER BY time_bucket DESC
+        columns:
+          - name: status
+            type: tag
+          - name: count
+            type: gauge
+          - name: avg_amount
+            type: gauge
+          - name: total_amount
+            type: gauge
+          - name: time_bucket
+            type: tag
+        tags:
+          - service:payment-service
+          - env:development
+      
+      - metric_prefix: payment.refunds
+        query: |
+          SELECT 
+            status,
+            COUNT(*) as count,
+            AVG(amount) as avg_amount,
+            SUM(amount) as total_amount
+          FROM refunds 
+          WHERE created_at > NOW() - INTERVAL '1 hour'
+          GROUP BY status
+        columns:
+          - name: status
+            type: tag
+          - name: count
+            type: gauge
+          - name: avg_amount
+            type: gauge
+          - name: total_amount
+            type: gauge
+        tags:
+          - service:payment-service
+          - env:development
+      
+      - metric_prefix: payment.database
+        query: |
+          SELECT 
+            schemaname,
+            relname as tablename,
+            n_tup_ins as inserts,
+            n_tup_upd as updates,
+            n_tup_del as deletes,
+            n_live_tup as live_tuples,
+            n_dead_tup as dead_tuples
+          FROM pg_stat_user_tables
+        columns:
+          - name: schemaname
+            type: tag
+          - name: tablename
+            type: tag
+          - name: inserts
+            type: gauge
+          - name: updates
+            type: gauge
+          - name: deletes
+            type: gauge
+          - name: live_tuples
+            type: gauge
+          - name: dead_tuples
+            type: gauge
+        tags:
+          - service:payment-service
+          - env:development
+    
+    ## Table and Index Monitoring
+    table_count_limit: 200
+    relation_regex: '.*'
+    
+    ## Tagging
+    tags:
+      - env:development
+      - service:payment-service
+      - database:payment_db
+      - component:postgresql
+    
+    ## Logging
+    log_unobfuscated_queries: false
+    log_unobfuscated_plans: false
+    
+    ## Collection Intervals (in seconds)
+    min_collection_interval: 15
+    
+    ## Resource Monitoring
+    collect_activity_metrics: true
+    collect_database_size_metrics: true
+    collect_default_database: true
+    collect_function_metrics: true
+    collect_count_metrics: true
+    
+    ## Lock Monitoring
+    collect_blocker_metrics: true
+    collect_wal_metrics: true
+    data_directory: /var/lib/postgresql/data
+    
+    ## Connection Pool Monitoring
+    collect_connection_metrics: true

@@ -112,7 +112,28 @@ db-migrate: ## Run database migrations (placeholder)
 
 db-seed: ## Seed database with test data
 	@echo "Seeding database with test data..."
-	$(DOCKER_COMPOSE) exec postgres psql -U payment_user -d payment_db -f /docker-entrypoint-initdb.d/init_db.sql
+	$(DOCKER_COMPOSE) exec postgres psql -U payment_user -d payment_db -f /docker-entrypoint-initdb.d/01-init_db.sql
+
+db-setup-dbm: ## Setup Datadog Database Monitoring
+	@echo "Setting up Datadog Database Monitoring..."
+	$(DOCKER_COMPOSE) exec postgres psql -U postgres -d payment_db -f /docker-entrypoint-initdb.d/02-setup_dbm.sql
+
+db-test-dbm: ## Test DBM connection and permissions
+	@echo "Testing DBM user connection..."
+	$(DOCKER_COMPOSE) exec postgres psql -U datadog -d payment_db -c "SELECT current_user, session_user;"
+	@echo "Testing pg_stat_statements extension..."
+	$(DOCKER_COMPOSE) exec postgres psql -U datadog -d payment_db -c "SELECT count(*) FROM pg_stat_statements LIMIT 1;"
+	@echo "Testing table access..."
+	$(DOCKER_COMPOSE) exec postgres psql -U datadog -d payment_db -c "SELECT count(*) FROM pg_stat_user_tables;"
+
+db-dbm-metrics: ## Show current DBM metrics
+	@echo "Current database metrics:"
+	@echo "========================"
+	$(DOCKER_COMPOSE) exec postgres psql -U datadog -d payment_db -c "SELECT schemaname, relname as tablename, n_tup_ins, n_tup_upd, n_tup_del, n_live_tup FROM pg_stat_user_tables;"
+	@echo ""
+	@echo "Query statistics (top 5 by calls):"
+	@echo "=================================="
+	$(DOCKER_COMPOSE) exec postgres psql -U datadog -d payment_db -c "SELECT query, calls, total_exec_time, mean_exec_time FROM pg_stat_statements ORDER BY calls DESC LIMIT 5;"
 
 # Development workflow
 run-local: ## Run service locally (without Docker)
