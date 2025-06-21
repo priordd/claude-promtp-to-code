@@ -32,6 +32,9 @@ class DatadogIntegration:
             # Configure specific integrations
             ddtrace.config.fastapi["service_name"] = settings.dd_service
 
+            # Enable profiling
+            self._setup_profiling()
+
             self.logger.info("Datadog integration configured successfully")
 
         except ImportError:
@@ -40,6 +43,27 @@ class DatadogIntegration:
         except Exception as e:
             self.logger.error("Failed to configure Datadog", error=str(e))
             self.enabled = False
+
+    def _setup_profiling(self) -> None:
+        """Setup Datadog continuous profiling."""
+        if not settings.dd_profiling_enabled:
+            self.logger.info("Datadog profiling disabled by configuration")
+            return
+            
+        try:
+            import ddtrace.profiling.auto
+            
+            self.logger.info(
+                "Datadog profiling enabled",
+                service=settings.dd_service,
+                env=settings.dd_env,
+                version=settings.dd_version
+            )
+            
+        except ImportError:
+            self.logger.warning("Datadog profiling not available - install ddtrace with profiling support")
+        except Exception as e:
+            self.logger.warning("Failed to enable Datadog profiling", error=str(e))
 
     def create_span(
         self, operation_name: str, service: Optional[str] = None, resource: Optional[str] = None

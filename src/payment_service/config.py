@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     dd_version: str = "0.1.0"
     dd_trace_enabled: bool = True
     dd_logs_enabled: bool = True
+    dd_profiling_enabled: bool = True
 
     # Monitoring
     health_check_timeout: int = 5
