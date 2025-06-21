@@ -1,7 +1,7 @@
 # Payment Service Makefile
 # Provides common development tasks for the payment service
 
-.PHONY: help venv install dev add-dep add-dev-dep lint format test test-unit test-integration test-api docker-build docker-up docker-down docker-restart docker-logs docker-logs-service docker-shell docker-psql db-migrate db-seed db-setup-dbm db-test-dbm db-dbm-metrics db-update-dbm run-local dev-setup status metrics clean clean-venv clean-all clean-docker prod-check docs diagrams diagrams-clean env-check install-uv deps-check quick-test full-test perf-test security-scan version debug terraform-init terraform-plan terraform-apply terraform-destroy terraform-output terraform-setup load-test load-test-ui load-test-stress load-test-custom load-test-status load-test-stop generate-auth-tokens generate-auth-simple generate-auth-jwt test-auth curl-examples test-trace-correlation
+.PHONY: help venv install dev add-dep add-dev-dep lint format test test-unit test-integration test-api docker-build docker-up docker-down docker-restart docker-logs docker-logs-service docker-shell docker-psql db-migrate db-seed db-setup-dbm db-test-dbm db-dbm-metrics db-update-dbm run-local dev-setup status metrics clean clean-venv clean-all clean-docker prod-check docs diagrams diagrams-clean env-check install-uv deps-check quick-test full-test perf-test security-scan version debug terraform-init terraform-plan terraform-apply terraform-destroy terraform-output terraform-setup load-test load-test-ui load-test-stress load-test-custom load-test-status load-test-stop generate-auth-tokens generate-auth-simple generate-auth-jwt test-auth curl-examples test-trace-correlation test-log-collection
 
 # Variables
 PYTHON := python3
@@ -411,3 +411,7 @@ curl-examples: ## Show curl command examples with valid tokens
 test-trace-correlation: ## Test APM trace correlation with logs
 	@echo "Testing APM trace correlation..."
 	$(UV) run python scripts/test_trace_correlation.py
+
+test-log-collection: ## Test Datadog log collection from all services
+	@echo "Testing Datadog log collection..."
+	$(UV) run python scripts/test_log_collection.py
