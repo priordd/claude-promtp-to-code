@@ -24,6 +24,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    labels:
+      com.datadoghq.ad.logs: '[{"source": "python", "service": "payment-service", "log_processing_rules": [{"type": "multi_line", "name": "json_logs", "pattern": "\\{.*\\}"}]}]'
+      com.datadoghq.tags: env:dev,service:payment-service,component:api
 
   postgres:
     image: postgres:16-alpine
@@ -53,6 +56,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    labels:
+      com.datadoghq.ad.logs: '[{"source": "postgresql", "service": "payment-database", "log_processing_rules": [{"type": "multi_line", "name": "postgres_multiline", "pattern": "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}"}]}]'
+      com.datadoghq.tags: env:dev,service:payment-database,component:postgresql
 
 
   mockserver:
@@ -65,6 +71,9 @@ services:
     volumes:
       - ./scripts/mockserver-config.json:/config/initializerJson.json
     command: -serverPort 1080
+    labels:
+      com.datadoghq.ad.logs: '[{"source": "mockserver", "service": "banking-service", "log_processing_rules": [{"type": "multi_line", "name": "log_start_with_date", "pattern": "\\d{4}-\\d{2}-\\d{2}"}]}]'
+      com.datadoghq.tags: env:dev,service:banking-service,component:mockserver
 
   datadog-agent:
     image: gcr.io/datadoghq/agent:7
