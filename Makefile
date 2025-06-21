@@ -1,7 +1,7 @@
 # Payment Service Makefile
 # Provides common development tasks for the payment service
 
-.PHONY: help venv install dev add-dep add-dev-dep lint format test test-unit test-integration test-api docker-build docker-up docker-down docker-restart docker-logs docker-logs-service docker-shell docker-psql db-migrate db-seed db-setup-dbm db-test-dbm db-dbm-metrics db-update-dbm run-local dev-setup status metrics clean clean-venv clean-all clean-docker prod-check docs diagrams diagrams-clean env-check deps-check quick-test full-test perf-test security-scan version debug terraform-init terraform-plan terraform-apply terraform-destroy terraform-output terraform-setup load-test load-test-ui load-test-stress load-test-custom load-test-status load-test-stop generate-auth-tokens generate-auth-simple generate-auth-jwt test-auth curl-examples
+.PHONY: help venv install dev add-dep add-dev-dep lint format test test-unit test-integration test-api docker-build docker-up docker-down docker-restart docker-logs docker-logs-service docker-shell docker-psql db-migrate db-seed db-setup-dbm db-test-dbm db-dbm-metrics db-update-dbm run-local dev-setup status metrics clean clean-venv clean-all clean-docker prod-check docs diagrams diagrams-clean env-check install-uv deps-check quick-test full-test perf-test security-scan version debug terraform-init terraform-plan terraform-apply terraform-destroy terraform-output terraform-setup load-test load-test-ui load-test-stress load-test-custom load-test-status load-test-stop generate-auth-tokens generate-auth-simple generate-auth-jwt test-auth curl-examples
 
 # Variables
 PYTHON := python3
@@ -238,14 +238,27 @@ env-check: ## Check environment variables
 		echo "✗ .env file missing (run 'make dev' to create)"; \
 	fi
 
+install-uv: ## Install uv package manager
+	@echo "Installing uv package manager..."
+	@if command -v $(UV) >/dev/null 2>&1; then \
+		echo "✓ uv is already installed"; \
+		$(UV) --version; \
+	else \
+		echo "📦 Installing uv..."; \
+		curl -LsSf https://astral.sh/uv/install.sh | sh; \
+		echo "✅ uv installed successfully!"; \
+		echo "💡 You may need to restart your shell or run: source ~/.bashrc"; \
+		echo "💡 Or add ~/.local/bin to your PATH"; \
+	fi
+
 deps-check: ## Check if dependencies are installed
 	@echo "Dependency Check:"
 	@echo "================="
-	@command -v $(UV) >/dev/null 2>&1 && echo "✓ uv installed" || echo "✗ uv not installed"
-	@command -v docker >/dev/null 2>&1 && echo "✓ Docker installed" || echo "✗ Docker not installed"
-	@command -v $(DOCKER_COMPOSE) >/dev/null 2>&1 && echo "✓ docker-compose installed" || echo "✗ docker-compose not installed"
-	@command -v jq >/dev/null 2>&1 && echo "✓ jq installed" || echo "✗ jq not installed"
-	@command -v curl >/dev/null 2>&1 && echo "✓ curl installed" || echo "✗ curl not installed"
+	@command -v $(UV) >/dev/null 2>&1 && echo "✓ uv installed" || echo "✗ uv not installed (run 'make install-uv')"
+	@command -v docker >/dev/null 2>&1 && echo "✓ Docker installed" || echo "✗ Docker not installed (install from https://docker.com)"
+	@command -v $(DOCKER_COMPOSE) >/dev/null 2>&1 && echo "✓ docker-compose installed" || echo "✗ docker-compose not installed (included with Docker Desktop)"
+	@command -v jq >/dev/null 2>&1 && echo "✓ jq installed" || echo "✗ jq not installed (install: brew install jq or apt-get install jq)"
+	@command -v curl >/dev/null 2>&1 && echo "✓ curl installed" || echo "✗ curl not installed (usually pre-installed)"
 
 # Workflow shortcuts
 quick-test: docker-up ## Quick development test cycle
