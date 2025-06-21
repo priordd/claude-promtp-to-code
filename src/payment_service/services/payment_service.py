@@ -8,7 +8,6 @@ from typing import Any, Dict, Optional
 import structlog
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from payment_service.config import settings
 from payment_service.database.connection import database_manager, serialize_json
 from payment_service.models.payment import (
     PaymentRequest,

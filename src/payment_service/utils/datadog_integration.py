@@ -20,6 +20,7 @@ class DatadogIntegration:
         """Setup Datadog tracing and monitoring."""
         try:
             import ddtrace
+
             # Use modern ddtrace.auto instead of deprecated patch_all
             import ddtrace.auto  # This replaces patch_all()
 

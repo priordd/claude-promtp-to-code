@@ -54,14 +54,10 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             detail="Invalid authentication token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # For demo purposes, accept specific valid tokens
-    valid_tokens = [
-        "test_token_123456789",
-        "valid_demo_token_12345",
-        "merchant_api_token_567"
-    ]
-    
+    valid_tokens = ["test_token_123456789", "valid_demo_token_12345", "merchant_api_token_567"]
+
     if credentials.credentials not in valid_tokens:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

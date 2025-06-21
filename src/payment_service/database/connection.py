@@ -37,7 +37,6 @@ class DatabaseManager:
             self.pool.closeall()
             self.logger.info("Database connections closed")
 
-
     async def execute_query(
         self,
         query: str,
@@ -58,13 +57,23 @@ class DatabaseManager:
                 if fetch_one:
                     result = cursor.fetchone()
                     # Commit even for fetch queries that might be RETURNING clauses
-                    if "returning" in query.lower() or "insert" in query.lower() or "update" in query.lower() or "delete" in query.lower():
+                    if (
+                        "returning" in query.lower()
+                        or "insert" in query.lower()
+                        or "update" in query.lower()
+                        or "delete" in query.lower()
+                    ):
                         conn.commit()
                     return result
                 elif fetch_all:
                     result = cursor.fetchall()
                     # Commit if this might be a modifying query
-                    if "returning" in query.lower() or "insert" in query.lower() or "update" in query.lower() or "delete" in query.lower():
+                    if (
+                        "returning" in query.lower()
+                        or "insert" in query.lower()
+                        or "update" in query.lower()
+                        or "delete" in query.lower()
+                    ):
                         conn.commit()
                     return result
                 else:

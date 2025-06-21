@@ -44,11 +44,14 @@ class TestPaymentService:
     ):
         """Test transaction creation."""
         from unittest.mock import AsyncMock
-        mock_db.execute_query = AsyncMock(return_value={
-            "id": "550e8400-e29b-41d4-a716-446655440000",
-            "transaction_id": "txn_test123456",
-            "created_at": "2024-01-01T00:00:00Z",
-        })
+
+        mock_db.execute_query = AsyncMock(
+            return_value={
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "transaction_id": "txn_test123456",
+                "created_at": "2024-01-01T00:00:00Z",
+            }
+        )
 
         result = await payment_service._create_transaction(
             transaction_id="txn_test123456",

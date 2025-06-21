@@ -65,7 +65,9 @@ class TestPaymentAPI:
 
     def test_process_payment_no_auth(self, client, sample_payment_request):
         """Test payment processing without authentication."""
-        response = client.post("/api/v1/payments/process", json=sample_payment_request.model_dump(mode="json"))
+        response = client.post(
+            "/api/v1/payments/process", json=sample_payment_request.model_dump(mode="json")
+        )
 
         assert response.status_code == 401
 

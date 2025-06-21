@@ -1,6 +1,5 @@
 """Event logging service for payment events tracking."""
 
-import json
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
@@ -41,19 +40,19 @@ class EventService:
             self.logger.error(
                 "Payment event logged",
                 event_message=event_message,
-                **{k: v for k, v in event_data.items() if k != 'event'}
+                **{k: v for k, v in event_data.items() if k != "event"},
             )
         elif "warning" in event_type.lower() or "declined" in event_type.lower():
             self.logger.warning(
                 "Payment event logged",
                 event_message=event_message,
-                **{k: v for k, v in event_data.items() if k != 'event'}
+                **{k: v for k, v in event_data.items() if k != "event"},
             )
         else:
             self.logger.info(
                 "Payment event logged",
                 event_message=event_message,
-                **{k: v for k, v in event_data.items() if k != 'event'}
+                **{k: v for k, v in event_data.items() if k != "event"},
             )
 
     def close(self) -> None:
@@ -66,9 +65,14 @@ class EventService:
         return settings.event_logging_enabled
 
     # Convenience methods for common payment events
-    async def log_payment_processed(self, transaction_id: str, amount: float, 
-                                  currency: str, merchant_id: str, 
-                                  correlation_id: str) -> None:
+    async def log_payment_processed(
+        self,
+        transaction_id: str,
+        amount: float,
+        currency: str,
+        merchant_id: str,
+        correlation_id: str,
+    ) -> None:
         """Log successful payment processing event."""
         await self.publish_event(
             topic="payment-events",
@@ -79,12 +83,13 @@ class EventService:
                 "currency": currency,
                 "merchant_id": merchant_id,
                 "correlation_id": correlation_id,
-                "status": "success"
-            }
+                "status": "success",
+            },
         )
 
-    async def log_payment_failed(self, transaction_id: str, reason: str, 
-                               merchant_id: str, correlation_id: str) -> None:
+    async def log_payment_failed(
+        self, transaction_id: str, reason: str, merchant_id: str, correlation_id: str
+    ) -> None:
         """Log failed payment processing event."""
         await self.publish_event(
             topic="payment-events",
@@ -94,13 +99,13 @@ class EventService:
                 "reason": reason,
                 "merchant_id": merchant_id,
                 "correlation_id": correlation_id,
-                "status": "failed"
-            }
+                "status": "failed",
+            },
         )
 
-    async def log_refund_processed(self, refund_id: str, transaction_id: str, 
-                                 amount: float, currency: str, 
-                                 correlation_id: str) -> None:
+    async def log_refund_processed(
+        self, refund_id: str, transaction_id: str, amount: float, currency: str, correlation_id: str
+    ) -> None:
         """Log successful refund processing event."""
         await self.publish_event(
             topic="refund-events",
@@ -111,12 +116,13 @@ class EventService:
                 "amount": amount,
                 "currency": currency,
                 "correlation_id": correlation_id,
-                "status": "success"
-            }
+                "status": "success",
+            },
         )
 
-    async def log_refund_failed(self, refund_id: str, transaction_id: str, 
-                              reason: str, correlation_id: str) -> None:
+    async def log_refund_failed(
+        self, refund_id: str, transaction_id: str, reason: str, correlation_id: str
+    ) -> None:
         """Log failed refund processing event."""
         await self.publish_event(
             topic="refund-events",
@@ -126,6 +132,6 @@ class EventService:
                 "transaction_id": transaction_id,
                 "reason": reason,
                 "correlation_id": correlation_id,
-                "status": "failed"
-            }
+                "status": "failed",
+            },
         )
