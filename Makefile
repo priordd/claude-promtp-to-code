@@ -140,6 +140,14 @@ db-dbm-metrics: ## Show current DBM metrics
 	@echo "=================================="
 	$(DOCKER_COMPOSE) exec postgres psql -U datadog -d payment_db -c "SELECT query, calls, total_exec_time, mean_exec_time FROM pg_stat_statements ORDER BY calls DESC LIMIT 5;"
 
+db-update-dbm: ## Update DBM permissions for new tables
+	@echo "Updating DBM permissions..."
+	@echo "Granting SELECT on all application tables to datadog user..."
+	$(DOCKER_COMPOSE) exec postgres psql -U payment_user -d payment_db -c "GRANT SELECT ON transactions TO datadog;"
+	$(DOCKER_COMPOSE) exec postgres psql -U payment_user -d payment_db -c "GRANT SELECT ON refunds TO datadog;"
+	$(DOCKER_COMPOSE) exec postgres psql -U payment_user -d payment_db -c "GRANT SELECT ON audit_logs TO datadog;"
+	@echo "✅ DBM permissions updated successfully"
+
 # Development workflow
 run-local: ## Run service locally (without Docker)
 	@echo "Running service locally..."
