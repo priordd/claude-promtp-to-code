@@ -29,8 +29,9 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: payment_db
-      POSTGRES_USER: payment_user
-      POSTGRES_PASSWORD: payment_password
+      # This creates both postgres superuser and payment_user
+      POSTGRES_PASSWORD: postgres_admin
+      POSTGRES_USER: postgres
       # Enable logging for DBM
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
     ports:
@@ -48,7 +49,7 @@ services:
       -c log_min_duration_statement=100
       -c shared_preload_libraries=pg_stat_statements
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U payment_user -d payment_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d payment_db"]
       interval: 10s
       timeout: 5s
       retries: 5
