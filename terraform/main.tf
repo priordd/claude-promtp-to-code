@@ -71,7 +71,7 @@ resource "datadog_dashboard" "payment_service_dashboard" {
           }
 
           yaxis {
-            label = "Count"
+            label = "Payments per Minute"
             scale = "linear"
             min   = "0"
           }
@@ -140,6 +140,51 @@ resource "datadog_dashboard" "payment_service_dashboard" {
             scale = "linear"
             min   = "0"
             max   = "100"
+          }
+        }
+      }
+
+      widget {
+        timeseries_definition {
+          title       = "API Request Metrics"
+          title_size  = "16"
+          title_align = "left"
+          show_legend = true
+
+          request {
+            q = "sum:api.payment.success{env:${var.environment}}.as_rate()"
+            display_type = "line"
+            style {
+              palette    = "green"
+              line_type  = "solid"
+              line_width = "normal"
+            }
+          }
+
+          request {
+            q = "sum:api.payment.error{env:${var.environment}}.as_rate()"
+            display_type = "line"
+            style {
+              palette    = "red"
+              line_type  = "solid"
+              line_width = "normal"
+            }
+          }
+
+          request {
+            q = "sum:api.payment.validation_error{env:${var.environment}}.as_rate()"
+            display_type = "line"
+            style {
+              palette    = "orange"
+              line_type  = "solid"
+              line_width = "normal"
+            }
+          }
+
+          yaxis {
+            label = "Requests/sec"
+            scale = "linear"
+            min   = "0"
           }
         }
       }
@@ -456,6 +501,41 @@ resource "datadog_dashboard" "payment_service_dashboard" {
 
       widget {
         timeseries_definition {
+          title       = "Application-Level Metrics"
+          title_size  = "16"
+          title_align = "left"
+          show_legend = true
+
+          request {
+            q = "sum:payment.processed{env:${var.environment}}.as_rate()"
+            display_type = "line"
+            style {
+              palette    = "green"
+              line_type  = "solid"
+              line_width = "normal"
+            }
+          }
+
+          request {
+            q = "sum:refund.processed{env:${var.environment}}.as_rate()"
+            display_type = "line"
+            style {
+              palette    = "orange"
+              line_type  = "solid"
+              line_width = "normal"
+            }
+          }
+
+          yaxis {
+            label = "Operations/sec"
+            scale = "linear"
+            min   = "0"
+          }
+        }
+      }
+
+      widget {
+        timeseries_definition {
           title       = "Error Rate"
           title_size  = "16"
           title_align = "left"
@@ -500,6 +580,41 @@ resource "datadog_dashboard" "payment_service_dashboard" {
               value      = 95
               palette    = "red_on_white"
             }
+          }
+        }
+      }
+
+      widget {
+        timeseries_definition {
+          title       = "Database Pool & Cache Metrics"
+          title_size  = "16"
+          title_align = "left"
+          show_legend = true
+
+          request {
+            q = "avg:payment.database.pool.size{env:${var.environment},service:${var.service_name}}"
+            display_type = "line"
+            style {
+              palette    = "purple"
+              line_type  = "solid"
+              line_width = "normal"
+            }
+          }
+
+          request {
+            q = "avg:payment.cache.max_size{env:${var.environment},service:${var.service_name}}"
+            display_type = "line"
+            style {
+              palette    = "blue"
+              line_type  = "solid"
+              line_width = "normal"
+            }
+          }
+
+          yaxis {
+            label = "Count"
+            scale = "linear"
+            min   = "0"
           }
         }
       }
@@ -570,25 +685,25 @@ resource "datadog_dashboard" "payment_service_dashboard" {
   widget {
     note_definition {
       content          = <<-EOF
-## 🚨 Key Alerts & Thresholds
+## 🚨 Key Metrics & Monitoring
 
-**Payment Processing:**
-- Success Rate < 95% → Critical Alert
-- Payment Volume Drop > 50% → Warning Alert
-- Average Payment Time > 5s → Performance Alert
+**Available Metrics:**
+- **API Metrics:** api.payment.success, api.payment.error, api.refund.success
+- **Business Metrics:** payment.service.count, payment.service.avg_amount, payment.service.total_amount
+- **Database Metrics:** payment.database.{inserts,updates,deletes,live_tuples,dead_tuples}
+- **Application Metrics:** payment.processed, refund.processed
+- **System Metrics:** postgresql.connections, postgresql.queries_per_second
 
-**Database:**
+**Key Thresholds:**
+- Payment Success Rate < 95% → Critical Alert
 - Dead Tuples > 1000 → Cleanup Needed
-- Connection Count > 80% Max → Scale Alert
-- Query Time > 1s → Performance Alert
+- API Error Rate > 5% → Critical Alert
+- Database Pool Size Monitoring
 
-**System:**
-- CPU > 80% → Resource Alert
-- Memory > 90% → Memory Alert
-- Error Rate > 5% → Critical Alert
-
-**Dashboard Updates:** Every 15 seconds
-**Data Retention:** 30 days
+**Configuration:**
+- Environment: ${var.environment}
+- Service: ${var.service_name}
+- Dashboard Updates: Every 15 seconds
 EOF
       background_color = "gray"
       font_size        = "14"
