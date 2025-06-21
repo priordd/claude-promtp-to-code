@@ -15,6 +15,12 @@ from payment_service.database.connection import database_manager
 from payment_service.utils.logging import setup_logging
 from payment_service.utils.monitoring import setup_monitoring
 
+try:
+    from ddtrace import tracer
+    DDTRACE_AVAILABLE = True
+except ImportError:
+    DDTRACE_AVAILABLE = False
+
 # Removed unused imports
 
 
@@ -56,6 +62,32 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Add trace correlation middleware
+    @app.middleware("http")
+    async def trace_correlation_middleware(request: Request, call_next):
+        """Middleware to ensure proper trace correlation in logs."""
+        # Get trace context if available
+        if DDTRACE_AVAILABLE:
+            span = tracer.current_span()
+            if span:
+                # Add trace context to structlog context
+                structlog.contextvars.clear_contextvars()
+                structlog.contextvars.bind_contextvars(
+                    trace_id=str(span.trace_id),
+                    span_id=str(span.span_id),
+                    service=settings.dd_service,
+                    version=settings.dd_version,
+                    env=settings.dd_env,
+                )
+        
+        response = await call_next(request)
+        
+        # Clear context after request
+        if DDTRACE_AVAILABLE:
+            structlog.contextvars.clear_contextvars()
+        
+        return response
 
     # Include API routes
     app.include_router(router)
