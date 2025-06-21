@@ -13,6 +13,8 @@ services:
       - DD_AGENT_HOST=datadog-agent
       - DEBUG=false
       - EVENT_LOGGING_ENABLED=true
+      - DD_PROFILING_ENABLED=true
+      - DD_PROFILING_TIMELINE_ENABLED=true
     depends_on:
       postgres:
         condition: service_healthy
