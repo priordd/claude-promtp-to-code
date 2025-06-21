@@ -10,12 +10,12 @@ except ImportError:
 class LoadTestConfig(BaseSettings):
     """Load testing configuration."""
     
-    # Service URLs
-    payment_service_url: str = "http://localhost:8000"
-    banking_api_url: str = "http://localhost:1080"
+    # Service URLs - using docker-compose service names
+    payment_service_url: str = "http://payment-service:8000"
+    banking_api_url: str = "http://mockserver:1080"
     
-    # Authentication
-    auth_token: str = "Bearer test_token_UKSZyHH7EkwD7skZOi2IGBBpjT9a046Q"
+    # Authentication - using valid token from routes.py
+    auth_token: str = "Bearer test_token_123456789"
     
     # Test behavior configuration
     min_wait_time: int = 1000  # milliseconds

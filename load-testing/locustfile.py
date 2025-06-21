@@ -4,31 +4,17 @@ from locust import HttpUser, task, between
 from locust.runners import MasterRunner
 import random
 
-try:
-    from .payment_service_tasks import (
-        PaymentServiceUser,
-        HighVolumePaymentUser,
-        FailureSimulationUser
-    )
-    from .banking_api_tasks import (
-        BankingAPIUser,
-        HighThroughputBankingUser,
-        BankingFailureUser
-    )
-    from .config import config
-except ImportError:
-    # Fallback for direct execution
-    from payment_service_tasks import (
-        PaymentServiceUser,
-        HighVolumePaymentUser,
-        FailureSimulationUser
-    )
-    from banking_api_tasks import (
-        BankingAPIUser,
-        HighThroughputBankingUser,
-        BankingFailureUser
-    )
-    from config import config
+from payment_service_tasks import (
+    PaymentServiceUser,
+    HighVolumePaymentUser,
+    FailureSimulationUser
+)
+from banking_api_tasks import (
+    BankingAPIUser,
+    HighThroughputBankingUser,
+    BankingFailureUser
+)
+from config import config
 
 class MixedWorkloadUser(HttpUser):
     """User that switches between PaymentService and BankingAPI testing."""
@@ -93,10 +79,7 @@ class RealisticTrafficUser(HttpUser):
     @task(weight=70)
     def typical_payment_flow(self):
         """Simulate typical payment flow with realistic delays."""
-        try:
-            from .data_generators import payment_generator
-        except ImportError:
-            from data_generators import payment_generator
+        from data_generators import payment_generator
         
         # Generate payment
         payment_data = payment_generator.generate_payment_request()
@@ -134,10 +117,7 @@ class RealisticTrafficUser(HttpUser):
         
         transaction = random.choice(self.user_session["transactions"])
         
-        try:
-            from .data_generators import payment_generator
-        except ImportError:
-            from data_generators import payment_generator
+        from data_generators import payment_generator
         refund_data = payment_generator.generate_refund_request(transaction["amount"])
         
         self.client.post(

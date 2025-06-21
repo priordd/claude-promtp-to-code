@@ -6,12 +6,8 @@ from typing import Dict, Any, Optional
 from locust import task, HttpUser, between
 from locust.exception import RescheduleTask
 
-try:
-    from .config import config
-    from .data_generators import payment_generator
-except ImportError:
-    from config import config
-    from data_generators import payment_generator
+from config import config
+from data_generators import payment_generator
 
 class PaymentServiceUser(HttpUser):
     """Locust user for PaymentService load testing."""

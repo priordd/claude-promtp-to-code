@@ -6,10 +6,7 @@ from typing import Dict, Any, List
 from faker import Faker
 from decimal import Decimal
 
-try:
-    from .config import config, VALID_CARDS, DECLINED_CARDS, CURRENCIES, MERCHANT_CATEGORIES
-except ImportError:
-    from config import config, VALID_CARDS, DECLINED_CARDS, CURRENCIES, MERCHANT_CATEGORIES
+from config import config, VALID_CARDS, DECLINED_CARDS, CURRENCIES, MERCHANT_CATEGORIES
 
 fake = Faker()
 

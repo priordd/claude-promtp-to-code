@@ -96,6 +96,24 @@ services:
     labels:
       com.datadoghq.ad.logs: '[{"source": "datadog-agent", "service": "datadog-agent"}]'
 
+  locust:
+    build:
+      context: ./load-testing
+      dockerfile: Dockerfile
+    ports:
+      - "8089:8089"
+    environment:
+      - LOCUST_HOST=http://payment-service:8000
+      - LOCUST_WEB_HOST=0.0.0.0
+      - LOCUST_WEB_PORT=8089
+    depends_on:
+      payment-service:
+        condition: service_healthy
+      mockserver:
+        condition: service_started
+    profiles:
+      - load-testing
+
 volumes:
   postgres_data:
 
