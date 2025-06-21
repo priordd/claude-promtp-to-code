@@ -40,20 +40,20 @@ class EventService:
         if "error" in event_type.lower() or "failed" in event_type.lower():
             self.logger.error(
                 "Payment event logged",
-                event=event_message,
-                **event_data
+                event_message=event_message,
+                **{k: v for k, v in event_data.items() if k != 'event'}
             )
         elif "warning" in event_type.lower() or "declined" in event_type.lower():
             self.logger.warning(
                 "Payment event logged",
-                event=event_message,
-                **event_data
+                event_message=event_message,
+                **{k: v for k, v in event_data.items() if k != 'event'}
             )
         else:
             self.logger.info(
                 "Payment event logged",
-                event=event_message,
-                **event_data
+                event_message=event_message,
+                **{k: v for k, v in event_data.items() if k != 'event'}
             )
 
     def close(self) -> None:

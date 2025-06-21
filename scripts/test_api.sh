@@ -71,14 +71,18 @@ make_request() {
     fi
     
     # Extract HTTP status code (last line)
-    status_code=$(echo "$response" | tail -n1)
+    status_code=$(echo "$response" | tail -n 1)
     
-    # Extract response body (all lines except last)
-    response_body=$(echo "$response" | head -n -1)
+    # Extract response body (all lines except last) - macOS compatible
+    response_body=$(echo "$response" | sed '$d')
     
     if [ "$status_code" = "$expected_status" ]; then
         success "$description - Status: $status_code"
-        echo "Response: $response_body" | jq . 2>/dev/null || echo "Response: $response_body"
+        if [ -n "$response_body" ] && echo "$response_body" | jq . >/dev/null 2>&1; then
+            echo "$response_body" | jq .
+        else
+            echo "Response: $response_body"
+        fi
     else
         error "$description - Expected: $expected_status, Got: $status_code"
         echo "Response: $response_body"
@@ -89,7 +93,11 @@ make_request() {
 
 # Function to extract transaction ID from response
 extract_transaction_id() {
-    echo "$1" | jq -r '.transaction_id' 2>/dev/null || echo ""
+    if [ -n "$1" ] && echo "$1" | jq . >/dev/null 2>&1; then
+        echo "$1" | jq -r '.transaction_id' 2>/dev/null || echo ""
+    else
+        echo ""
+    fi
 }
 
 # Function to wait for service to be ready
@@ -210,7 +218,7 @@ main() {
         -d "$VALID_PAYMENT_REQUEST" \
         "$BASE_URL/api/v1/payments/process")
     
-    status_code=$(echo "$response" | tail -n1)
+    status_code=$(echo "$response" | tail -n 1)
     if [ "$status_code" = "401" ]; then
         success "Payment processing without auth - Status: $status_code"
     else
@@ -228,7 +236,7 @@ main() {
         -d "$VALID_PAYMENT_REQUEST" \
         "$BASE_URL/api/v1/payments/process")
     
-    status_code=$(echo "$response" | tail -n1)
+    status_code=$(echo "$response" | tail -n 1)
     if [ "$status_code" = "401" ]; then
         success "Payment processing with invalid auth - Status: $status_code"
     else
@@ -249,15 +257,19 @@ main() {
         -d "$VALID_PAYMENT_REQUEST" \
         "$BASE_URL/api/v1/payments/process")
     
-    status_code=$(echo "$response" | tail -n1)
-    response_body=$(echo "$response" | head -n -1)
+    status_code=$(echo "$response" | tail -n 1)
+    response_body=$(echo "$response" | sed '$d')
     
     ((TOTAL_TESTS++))
     if [ "$status_code" = "200" ]; then
         success "Valid payment processing - Status: $status_code"
         TRANSACTION_ID=$(extract_transaction_id "$response_body")
         log "Transaction ID: $TRANSACTION_ID"
-        echo "Response: $response_body" | jq . 2>/dev/null || echo "Response: $response_body"
+        if [ -n "$response_body" ] && echo "$response_body" | jq . >/dev/null 2>&1; then
+            echo "$response_body" | jq .
+        else
+            echo "Response: $response_body"
+        fi
     else
         error "Valid payment processing - Expected: 200, Got: $status_code"
         echo "Response: $response_body"
@@ -311,7 +323,11 @@ main() {
     start_time=$(date +%s)
     
     for i in {1..5}; do
-        CONCURRENT_REQUEST=$(echo "$VALID_PAYMENT_REQUEST" | jq --arg desc "Concurrent test payment $i" '.description = $desc')
+        if echo "$VALID_PAYMENT_REQUEST" | jq . >/dev/null 2>&1; then
+            CONCURRENT_REQUEST=$(echo "$VALID_PAYMENT_REQUEST" | jq --arg desc "Concurrent test payment $i" '.description = $desc')
+        else
+            CONCURRENT_REQUEST="$VALID_PAYMENT_REQUEST"
+        fi
         
         curl -s \
             -X POST \
@@ -350,7 +366,7 @@ main() {
         -d '{"invalid": json}' \
         "$BASE_URL/api/v1/payments/process")
     
-    status_code=$(echo "$response" | tail -n1)
+    status_code=$(echo "$response" | tail -n 1)
     if [ "$status_code" = "422" ] || [ "$status_code" = "400" ]; then
         success "Malformed JSON handling - Status: $status_code"
     else
@@ -360,7 +376,11 @@ main() {
     
     # Test very large request
     LARGE_DESCRIPTION=$(printf "%*s" 10000 | tr ' ' 'A')
-    LARGE_REQUEST=$(echo "$VALID_PAYMENT_REQUEST" | jq --arg desc "$LARGE_DESCRIPTION" '.description = $desc')
+    if echo "$VALID_PAYMENT_REQUEST" | jq . >/dev/null 2>&1; then
+        LARGE_REQUEST=$(echo "$VALID_PAYMENT_REQUEST" | jq --arg desc "$LARGE_DESCRIPTION" '.description = $desc')
+    else
+        LARGE_REQUEST="$VALID_PAYMENT_REQUEST"
+    fi
     
     make_request "POST" "/api/v1/payments/process" "$LARGE_REQUEST" "422" "Very large request handling"
     

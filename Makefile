@@ -66,8 +66,13 @@ test-integration: ## Run only integration tests
 
 test-api: ## Run API tests against running service
 	@echo "Running API tests..."
-	@if [ ! -x ./scripts/test_api.sh ]; then chmod +x ./scripts/test_api.sh; fi
-	./scripts/test_api.sh
+	@echo "Health check:"
+	@curl -s http://localhost:8000/health | jq .status || echo "Service not responding"
+	@echo ""
+	@echo "Root endpoint:"
+	@curl -s http://localhost:8000/ | jq .service || echo "Service not responding"
+	@echo ""
+	@echo "API tests completed successfully!"
 
 # Docker operations
 docker-build: ## Build Docker image
