@@ -11,7 +11,7 @@ services:
       - DD_API_KEY=${DD_API_KEY:-}
       - DD_APP_KEY=${DD_APP_KEY:-}
       - DD_AGENT_HOST=datadog-agent
-      - DEBUG=true
+      - DEBUG=false
       - EVENT_LOGGING_ENABLED=true
     depends_on:
       postgres:
