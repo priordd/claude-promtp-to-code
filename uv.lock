@@ -634,15 +634,6 @@ wheels = [
 ]
 
 [[package]]
-name = "kafka-python"
-version = "2.2.12"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/1e/26/bec496da574bbacf53b8a5a6048f76b6f76d89e932369bd974573af20971/kafka_python-2.2.12.tar.gz", hash = "sha256:bf73f7a74b596a34cfe4d22ffa53352fff0bd2b61acfa409235ed5da72a98bc1", size = 347369, upload-time = "2025-06-18T23:06:51.287Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d0/83/10c0a169f066466a9b79b39741828259ccf5e6d35ba554e082e0fea87953/kafka_python-2.2.12-py2.py3-none-any.whl", hash = "sha256:2817b81099bf2dc8905491d976362c151114e6d5f45817c4ec0c487b3cdc660f", size = 309706, upload-time = "2025-06-18T23:06:49.299Z" },
-]
-
-[[package]]
 name = "legacy-cgi"
 version = "2.6.3"
 source = { registry = "https://pypi.org/simple" }
@@ -833,7 +824,6 @@ dependencies = [
     { name = "ddtrace" },
     { name = "fastapi" },
     { name = "httpx" },
-    { name = "kafka-python" },
     { name = "psycopg2-binary" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
@@ -877,7 +867,6 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.104.1" },
     { name = "httpx", specifier = ">=0.25.2" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.25.2" },
-    { name = "kafka-python", specifier = ">=2.0.2" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.7.1" },
     { name = "psycopg2-binary", specifier = ">=2.9.9" },
     { name = "pydantic", specifier = ">=2.5.0" },

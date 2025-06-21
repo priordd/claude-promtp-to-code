@@ -138,7 +138,7 @@ db-dbm-metrics: ## Show current DBM metrics
 # Development workflow
 run-local: ## Run service locally (without Docker)
 	@echo "Running service locally..."
-	@echo "Make sure PostgreSQL and Kafka are running (use docker-compose up postgres kafka zookeeper)"
+	@echo "Make sure PostgreSQL is running (use docker-compose up postgres)"
 	$(UV) run uvicorn payment_service.main:app --host 0.0.0.0 --port 8000 --reload
 
 dev-setup: docker-up ## Complete development setup

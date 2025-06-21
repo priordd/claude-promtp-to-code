@@ -1,49 +1,20 @@
-"""Event publishing service for Kafka integration."""
+"""Event logging service for payment events tracking."""
 
-import asyncio
 import json
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 import structlog
-from kafka import KafkaProducer
-from kafka.errors import KafkaError
-from tenacity import retry, stop_after_attempt, wait_exponential
 
 from payment_service.config import settings
 
 
 class EventService:
-    """Service for publishing events to Kafka."""
+    """Service for logging and tracking payment events."""
 
     def __init__(self):
         self.logger = structlog.get_logger(__name__)
-        self.producer: Optional[KafkaProducer] = None
 
-    def _get_producer(self) -> KafkaProducer:
-        """Get or create Kafka producer."""
-        if not self.producer:
-            try:
-                self.producer = KafkaProducer(
-                    bootstrap_servers=settings.kafka_bootstrap_servers.split(","),
-                    value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-                    key_serializer=lambda v: v.encode("utf-8") if v else None,
-                    acks="all",
-                    retries=settings.kafka_retry_attempts,
-                    max_in_flight_requests_per_connection=1,
-                    enable_idempotence=True,
-                    # Add timeout configurations for health checks
-                    metadata_max_age_ms=30000,  # 30 seconds
-                    request_timeout_ms=10000,   # 10 seconds
-                    api_version_auto_timeout_ms=5000,  # 5 seconds
-                )
-                self.logger.info("Kafka producer initialized")
-            except Exception as e:
-                self.logger.error("Failed to initialize Kafka producer", error=str(e))
-                raise
-
-        return self.producer
-
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
     async def publish_event(
         self,
         topic: str,
@@ -51,88 +22,110 @@ class EventService:
         event_data: Dict[str, Any],
         key: Optional[str] = None,
     ) -> None:
-        """Publish event to Kafka topic."""
-        message = {
+        """Log event with structured logging."""
+        if not settings.event_logging_enabled:
+            return
+
+        # Create structured event message
+        event_message = {
             "event_type": event_type,
+            "topic": topic,
             "event_data": event_data,
-            "timestamp": event_data.get("timestamp"),
+            "timestamp": event_data.get("timestamp", datetime.now(timezone.utc).isoformat()),
             "correlation_id": event_data.get("correlation_id"),
+            "key": key or event_data.get("transaction_id", event_data.get("refund_id")),
         }
 
-        try:
-            producer = self._get_producer()
-
-            # Send message asynchronously
-            future = producer.send(
-                topic=topic,
-                value=message,
-                key=key or event_data.get("transaction_id", event_data.get("refund_id")),
+        # Log the event with appropriate level based on event type
+        if "error" in event_type.lower() or "failed" in event_type.lower():
+            self.logger.error(
+                "Payment event logged",
+                event=event_message,
+                **event_data
             )
-
-            # Wait for send to complete
-            await asyncio.get_event_loop().run_in_executor(None, lambda: future.get(timeout=10))
-
+        elif "warning" in event_type.lower() or "declined" in event_type.lower():
+            self.logger.warning(
+                "Payment event logged",
+                event=event_message,
+                **event_data
+            )
+        else:
             self.logger.info(
-                "Event published successfully",
-                topic=topic,
-                event_type=event_type,
-                correlation_id=event_data.get("correlation_id"),
+                "Payment event logged",
+                event=event_message,
+                **event_data
             )
-
-        except KafkaError as e:
-            self.logger.error(
-                "Failed to publish event to Kafka",
-                topic=topic,
-                event_type=event_type,
-                error=str(e),
-                correlation_id=event_data.get("correlation_id"),
-            )
-            raise
-        except Exception as e:
-            self.logger.error(
-                "Unexpected error publishing event",
-                topic=topic,
-                event_type=event_type,
-                error=str(e),
-                correlation_id=event_data.get("correlation_id"),
-            )
-            raise
 
     def close(self) -> None:
-        """Close Kafka producer."""
-        if self.producer:
-            try:
-                self.producer.close()
-                self.logger.info("Kafka producer closed")
-            except Exception as e:
-                self.logger.error("Error closing Kafka producer", error=str(e))
+        """Close event service (no-op for logging-based implementation)."""
+        self.logger.info("Event service closed")
 
     async def health_check(self) -> bool:
-        """Check Kafka connectivity."""
-        try:
-            # Simple and reliable health check - just try to create a producer
-            # If it succeeds, Kafka is accessible
-            from kafka import KafkaProducer
-            import time
-            
-            start_time = time.time()
-            
-            # Create producer with minimal configuration and short timeouts
-            health_producer = KafkaProducer(
-                bootstrap_servers=settings.kafka_bootstrap_servers.split(","),
-                api_version_auto_timeout_ms=3000,
-                connections_max_idle_ms=3000,
-                request_timeout_ms=3000,
-            )
-            
-            # If we get here, Kafka connection worked
-            elapsed = time.time() - start_time
-            self.logger.debug("Kafka health check completed", elapsed_seconds=elapsed)
-            
-            # Clean up
-            health_producer.close(timeout=1)
-            return True
-                
-        except Exception as e:
-            self.logger.debug("Kafka health check failed", error=str(e))
-            return False
+        """Check event service health."""
+        # Logging-based service is always healthy if configured
+        return settings.event_logging_enabled
+
+    # Convenience methods for common payment events
+    async def log_payment_processed(self, transaction_id: str, amount: float, 
+                                  currency: str, merchant_id: str, 
+                                  correlation_id: str) -> None:
+        """Log successful payment processing event."""
+        await self.publish_event(
+            topic="payment-events",
+            event_type="payment_processed",
+            event_data={
+                "transaction_id": transaction_id,
+                "amount": amount,
+                "currency": currency,
+                "merchant_id": merchant_id,
+                "correlation_id": correlation_id,
+                "status": "success"
+            }
+        )
+
+    async def log_payment_failed(self, transaction_id: str, reason: str, 
+                               merchant_id: str, correlation_id: str) -> None:
+        """Log failed payment processing event."""
+        await self.publish_event(
+            topic="payment-events",
+            event_type="payment_failed",
+            event_data={
+                "transaction_id": transaction_id,
+                "reason": reason,
+                "merchant_id": merchant_id,
+                "correlation_id": correlation_id,
+                "status": "failed"
+            }
+        )
+
+    async def log_refund_processed(self, refund_id: str, transaction_id: str, 
+                                 amount: float, currency: str, 
+                                 correlation_id: str) -> None:
+        """Log successful refund processing event."""
+        await self.publish_event(
+            topic="refund-events",
+            event_type="refund_processed",
+            event_data={
+                "refund_id": refund_id,
+                "transaction_id": transaction_id,
+                "amount": amount,
+                "currency": currency,
+                "correlation_id": correlation_id,
+                "status": "success"
+            }
+        )
+
+    async def log_refund_failed(self, refund_id: str, transaction_id: str, 
+                              reason: str, correlation_id: str) -> None:
+        """Log failed refund processing event."""
+        await self.publish_event(
+            topic="refund-events",
+            event_type="refund_failed",
+            event_data={
+                "refund_id": refund_id,
+                "transaction_id": transaction_id,
+                "reason": reason,
+                "correlation_id": correlation_id,
+                "status": "failed"
+            }
+        )

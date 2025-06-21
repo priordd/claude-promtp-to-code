@@ -22,7 +22,7 @@ WORKDIR /app
 COPY pyproject.toml ./
 
 # Install dependencies (without editable mode for Docker)
-RUN uv pip install --system fastapi[standard] pydantic pydantic-settings psycopg2-binary python-dotenv structlog ddtrace kafka-python cryptography httpx tenacity uvicorn
+RUN uv pip install --system fastapi[standard] pydantic pydantic-settings psycopg2-binary python-dotenv structlog ddtrace cryptography httpx tenacity uvicorn
 
 # Copy application code
 COPY src/ ./src/

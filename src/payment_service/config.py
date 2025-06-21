@@ -28,10 +28,8 @@ class Settings(BaseSettings):
     banking_api_url: str = "http://localhost:1080"
     banking_api_timeout: int = 30
 
-    # Kafka Configuration
-    kafka_bootstrap_servers: str = "localhost:9092"
-    kafka_payment_topic: str = "payment-events"
-    kafka_retry_attempts: int = 3
+    # Event Configuration
+    event_logging_enabled: bool = True
 
     # Datadog Configuration
     dd_api_key: Optional[str] = None

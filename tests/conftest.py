@@ -207,7 +207,7 @@ def setup_test_environment(monkeypatch):
     """Setup test environment variables."""
     monkeypatch.setenv("DEBUG", "true")
     monkeypatch.setenv("DATABASE_URL", "postgresql://test:test@localhost:5432/test_db")
-    monkeypatch.setenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+    monkeypatch.setenv("EVENT_LOGGING_ENABLED", "true")
     monkeypatch.setenv("DD_TRACE_ENABLED", "false")
     monkeypatch.setenv("METRICS_ENABLED", "false")
 

@@ -7,16 +7,14 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://payment_user:payment_password@postgres:5432/payment_db
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - BANKING_API_URL=http://mockserver:1080
       - DD_API_KEY=${DD_API_KEY:-}
       - DD_APP_KEY=${DD_APP_KEY:-}
       - DD_AGENT_HOST=datadog-agent
       - DEBUG=true
+      - EVENT_LOGGING_ENABLED=true
     depends_on:
       postgres:
-        condition: service_healthy
-      kafka:
         condition: service_healthy
       mockserver:
         condition: service_started
@@ -55,39 +53,6 @@ services:
       timeout: 5s
       retries: 5
 
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.4.0
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
-    healthcheck:
-      test: ["CMD", "bash", "-c", "echo 'ruok' | nc localhost 2181"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  kafka:
-    image: confluentinc/cp-kafka:7.4.0
-    depends_on:
-      zookeeper:
-        condition: service_healthy
-    ports:
-      - "9092:9092"
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_HOST://kafka:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_CREATE_TOPICS: "payment-events:1:1"
-    healthcheck:
-      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
 
   mockserver:
     image: mockserver/mockserver:5.15.0

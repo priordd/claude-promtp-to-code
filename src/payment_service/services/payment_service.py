@@ -533,7 +533,7 @@ class PaymentService:
         }
 
         await self.event_service.publish_event(
-            topic=settings.kafka_payment_topic,
+            topic="payment-events",
             event_type="payment_status_changed",
             event_data=event_data,
         )
@@ -550,7 +550,7 @@ class PaymentService:
         }
 
         await self.event_service.publish_event(
-            topic=settings.kafka_payment_topic,
+            topic="refund-events",
             event_type="refund_status_changed",
             event_data=event_data,
         )
