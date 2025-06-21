@@ -1,8 +1,7 @@
 """Database connection management with connection pooling."""
 
 import json
-from contextlib import asynccontextmanager
-from typing import Any, Dict, List, Optional, AsyncGenerator
+from typing import Any, Dict, List, Optional
 import psycopg2
 import psycopg2.extras
 import psycopg2.pool
@@ -38,24 +37,6 @@ class DatabaseManager:
             self.pool.closeall()
             self.logger.info("Database connections closed")
 
-    @asynccontextmanager
-    async def get_connection(self) -> AsyncGenerator[psycopg2.extensions.connection, None]:
-        """Get a database connection from the pool."""
-        if not self.pool:
-            raise RuntimeError("Database pool not initialized")
-
-        conn = None
-        try:
-            conn = self.pool.getconn()
-            yield conn
-        except Exception as e:
-            if conn:
-                conn.rollback()
-            self.logger.error("Database connection error", error=str(e))
-            raise
-        finally:
-            if conn:
-                self.pool.putconn(conn)
 
     async def execute_query(
         self,
@@ -65,30 +46,61 @@ class DatabaseManager:
         fetch_all: bool = False,
     ) -> Any:
         """Execute a database query with connection pooling."""
-        async with self.get_connection() as conn:
+        if not self.pool:
+            raise RuntimeError("Database pool not initialized")
+
+        conn = None
+        try:
+            conn = self.pool.getconn()
             with conn.cursor() as cursor:
                 cursor.execute(query, params)
 
                 if fetch_one:
-                    return cursor.fetchone()
+                    result = cursor.fetchone()
+                    # Commit even for fetch queries that might be RETURNING clauses
+                    if "returning" in query.lower() or "insert" in query.lower() or "update" in query.lower() or "delete" in query.lower():
+                        conn.commit()
+                    return result
                 elif fetch_all:
-                    return cursor.fetchall()
+                    result = cursor.fetchall()
+                    # Commit if this might be a modifying query
+                    if "returning" in query.lower() or "insert" in query.lower() or "update" in query.lower() or "delete" in query.lower():
+                        conn.commit()
+                    return result
                 else:
+                    # This is a modification query without fetch
+                    rowcount = cursor.rowcount
                     conn.commit()
-                    return cursor.rowcount
+                    return rowcount
+        except Exception as e:
+            if conn:
+                conn.rollback()
+            self.logger.error("Database query error", error=str(e), query=query)
+            raise
+        finally:
+            if conn:
+                self.pool.putconn(conn)
 
     async def execute_transaction(self, operations: List[tuple]) -> None:
         """Execute multiple operations in a single transaction."""
-        async with self.get_connection() as conn:
-            try:
-                with conn.cursor() as cursor:
-                    for query, params in operations:
-                        cursor.execute(query, params)
-                    conn.commit()
-            except Exception as e:
+        if not self.pool:
+            raise RuntimeError("Database pool not initialized")
+
+        conn = None
+        try:
+            conn = self.pool.getconn()
+            with conn.cursor() as cursor:
+                for query, params in operations:
+                    cursor.execute(query, params)
+                conn.commit()
+        except Exception as e:
+            if conn:
                 conn.rollback()
-                self.logger.error("Transaction failed", error=str(e))
-                raise
+            self.logger.error("Transaction failed", error=str(e))
+            raise
+        finally:
+            if conn:
+                self.pool.putconn(conn)
 
     async def health_check(self) -> bool:
         """Check database connectivity."""

@@ -27,7 +27,7 @@ from payment_service.utils.monitoring import create_span, increment_counter
 router = APIRouter()
 
 # Security
-security = HTTPBearer(auto_error=False)
+security = HTTPBearer(auto_error=True)
 
 # Services
 payment_service = PaymentService()
@@ -47,9 +47,22 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # In a real implementation, validate the token
-    # For demo purposes, we'll accept any token
+    # Validate token format and content
     if not credentials.credentials or len(credentials.credentials) < 10:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # For demo purposes, accept specific valid tokens
+    valid_tokens = [
+        "test_token_123456789",
+        "valid_demo_token_12345",
+        "merchant_api_token_567"
+    ]
+    
+    if credentials.credentials not in valid_tokens:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication token",
