@@ -1,7 +1,7 @@
 # Payment Service Makefile
 # Provides common development tasks for the payment service
 
-.PHONY: help install dev test lint format docker-build docker-up docker-down docker-logs test-api clean terraform-init terraform-plan terraform-apply terraform-destroy
+.PHONY: help venv install dev add-dep add-dev-dep lint format test test-unit test-integration test-api docker-build docker-up docker-down docker-restart docker-logs docker-logs-service docker-shell docker-psql db-migrate db-seed db-setup-dbm db-test-dbm db-dbm-metrics db-update-dbm run-local dev-setup status metrics clean clean-venv clean-all clean-docker prod-check docs diagrams diagrams-clean env-check deps-check quick-test full-test perf-test security-scan version debug terraform-init terraform-plan terraform-apply terraform-destroy terraform-output terraform-setup load-test load-test-ui load-test-stress load-test-custom load-test-status load-test-stop generate-auth-tokens generate-auth-simple generate-auth-jwt test-auth curl-examples
 
 # Variables
 PYTHON := python3
@@ -170,9 +170,10 @@ status: ## Check service status
 	@echo "Checking service status..."
 	@curl -s http://localhost:8000/health | jq . || echo "Service not responding"
 
-metrics: ## View service metrics (placeholder)
-	@echo "Service metrics:"
-	@curl -s http://localhost:8000/health | jq '.services' || echo "Service not responding"
+metrics: ## View service metrics and health
+	@echo "Service metrics and health status:"
+	@echo "=================================="
+	@curl -s http://localhost:8000/health | jq . || echo "Service not responding"
 
 # Cleanup
 clean: ## Clean up generated files
@@ -210,13 +211,6 @@ prod-check: ## Run production readiness checks
 	@echo "Note: Add security scanning tools here"
 	@echo "Production readiness check complete!"
 
-deploy-staging: ## Deploy to staging environment (placeholder)
-	@echo "Deploying to staging environment..."
-	@echo "Note: Add staging deployment commands here"
-
-deploy-prod: ## Deploy to production environment (placeholder)
-	@echo "Deploying to production environment..."
-	@echo "Note: Add production deployment commands here"
 
 # Documentation
 docs: ## Generate and serve documentation
@@ -268,14 +262,10 @@ full-test: ## Full test suite including Docker rebuild
 	$(MAKE) test
 	$(MAKE) test-api
 
-# Performance testing
+# Performance testing  
 perf-test: ## Run performance tests (placeholder)
 	@echo "Running performance tests..."
 	@echo "Note: Add performance testing tools here"
-
-load-test: ## Run load tests (placeholder)
-	@echo "Running load tests..."
-	@echo "Note: Add load testing tools here"
 
 # Security
 security-scan: ## Run security scans (placeholder)
@@ -345,58 +335,34 @@ terraform-setup: ## Complete Terraform setup for Datadog dashboard
 		echo "Run 'make terraform-init && make terraform-apply' to deploy"; \
 	fi
 
-# Load testing with Locust
-load-test: ## Run basic load test with Locust
-	@echo "Running basic load test..."
-	@cd load-testing && $(UV) run locust -f locustfile.py --host=http://localhost:8000 --users=10 --spawn-rate=2 --run-time=60s --headless --html=reports/basic-report.html --csv=reports/basic-results
+# Load testing with integrated docker-compose
+load-test: ## Run basic load test with docker-compose
+	@echo "Running basic load test with docker-compose..."
+	./scripts/run-load-tests.sh quick
 
-load-test-ui: ## Run load test with Locust web UI
-	@echo "Starting Locust web UI..."
+load-test-ui: ## Run load test with Locust web UI via docker-compose
+	@echo "Starting Locust web UI with docker-compose..."
 	@echo "Open http://localhost:8089 in your browser"
-	@cd load-testing && $(UV) run locust -f locustfile.py --host=http://localhost:8000
+	./scripts/run-load-tests.sh web
 
-load-test-smoke: ## Run quick smoke test
-	@echo "Running smoke test..."
-	@cd load-testing && $(UV) run locust -f locustfile.py --users=5 --spawn-rate=1 --run-time=30s --headless --html=reports/smoke-report.html
+load-test-stress: ## Run stress test with higher load
+	@echo "Running stress test..."
+	./scripts/run-load-tests.sh stress
 
-load-test-volume: ## Run high-volume load test
-	@echo "Running high-volume test..."
-	@cd load-testing && $(UV) run locust -f locustfile.py --host=http://localhost:8000 --users=100 --spawn-rate=10 --run-time=300s --headless --html=reports/volume-report.html --csv=reports/volume-results
+load-test-custom: ## Run custom load test (usage: make load-test-custom USERS=20 SPAWN_RATE=3 TIME=120s)
+	@if [ -z "$(USERS)" ]; then echo "Usage: make load-test-custom USERS=20 SPAWN_RATE=3 TIME=120s"; exit 1; fi
+	@if [ -z "$(SPAWN_RATE)" ]; then echo "Usage: make load-test-custom USERS=20 SPAWN_RATE=3 TIME=120s"; exit 1; fi
+	@if [ -z "$(TIME)" ]; then echo "Usage: make load-test-custom USERS=20 SPAWN_RATE=3 TIME=120s"; exit 1; fi
+	@echo "Running custom load test: $(USERS) users, $(SPAWN_RATE)/sec spawn rate, $(TIME) duration"
+	./scripts/run-load-tests.sh headless $(USERS) $(SPAWN_RATE) $(TIME)
 
-load-test-banking: ## Run banking API load test
-	@echo "Running banking API test..."
-	@cd load-testing && $(UV) run locust -f locustfile.py --host=http://localhost:1080 --users=20 --spawn-rate=2 --run-time=120s --headless --html=reports/banking-report.html --csv=reports/banking-results
+load-test-status: ## Check load test service status
+	@echo "Checking load test service status..."
+	./scripts/run-load-tests.sh status
 
-load-test-failures: ## Run failure simulation test
-	@echo "Running failure simulation test..."
-	@cd load-testing && $(UV) run locust -f locustfile.py --host=http://localhost:8000 --users=15 --spawn-rate=2 --run-time=90s --headless --html=reports/failures-report.html --csv=reports/failures-results
-
-load-test-docker: ## Run distributed load test with Docker
-	@echo "Starting distributed load test with Docker..."
-	@cd load-testing && docker-compose -f docker-compose.locust.yml up --build
-
-load-test-stop: ## Stop Docker load test containers
+load-test-stop: ## Stop load test containers
 	@echo "Stopping load test containers..."
-	@cd load-testing && docker-compose -f docker-compose.locust.yml down --remove-orphans
-
-load-test-reports: ## Open latest load test reports
-	@echo "Opening load test reports..."
-	@if [ -f load-testing/reports/smoke-report.html ]; then \
-		open load-testing/reports/smoke-report.html || xdg-open load-testing/reports/smoke-report.html || echo "Report: load-testing/reports/smoke-report.html"; \
-	elif [ -f load-testing/reports/basic-report.html ]; then \
-		open load-testing/reports/basic-report.html || xdg-open load-testing/reports/basic-report.html || echo "Report: load-testing/reports/basic-report.html"; \
-	else \
-		echo "No reports found. Run a load test first."; \
-	fi
-
-load-test-clean: ## Clean load test reports
-	@echo "Cleaning load test reports..."
-	@rm -rf load-testing/reports/*
-	@echo "Reports cleaned."
-
-load-test-install: ## Install load testing dependencies (already included in UV dev dependencies)
-	@echo "Load testing dependencies are included in dev dependencies."
-	@echo "Run 'uv sync --dev' to install all development dependencies including Locust."
+	./scripts/run-load-tests.sh stop
 
 # Authentication token generation
 generate-auth-tokens: ## Generate test authentication tokens

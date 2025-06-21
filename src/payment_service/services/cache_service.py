@@ -35,7 +35,7 @@ class CacheService:
                         self.logger.error("Cache cleanup error", error=str(e))
 
             # Only start task if event loop is running
-            loop = asyncio.get_running_loop()
+            asyncio.get_running_loop()  # Check if event loop exists
             if not self._cleanup_task or self._cleanup_task.done():
                 self._cleanup_task = asyncio.create_task(cleanup_expired())
         except RuntimeError:
