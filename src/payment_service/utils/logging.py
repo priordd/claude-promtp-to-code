@@ -9,6 +9,7 @@ from payment_service.config import settings
 
 try:
     from ddtrace import tracer
+
     DDTRACE_AVAILABLE = True
 except ImportError:
     DDTRACE_AVAILABLE = False
@@ -23,15 +24,16 @@ def add_trace_correlation(logger, method_name, event_dict):
             # Add trace and span IDs for correlation
             event_dict["dd.trace_id"] = str(span.trace_id)
             event_dict["dd.span_id"] = str(span.span_id)
-            
+
             # Also add service and version for better correlation
             event_dict["dd.service"] = settings.dd_service
             event_dict["dd.version"] = settings.dd_version
             event_dict["dd.env"] = settings.dd_env
-    
+
     return event_dict
 
 
+@tracer.wrap()
 def setup_logging() -> None:
     """Configure structured logging with appropriate processors."""
 
@@ -67,7 +69,7 @@ def setup_logging() -> None:
         wrapper_class=structlog.stdlib.BoundLogger,
         cache_logger_on_first_use=True,
     )
-    
+
     # Enable contextvars for request-scoped context
     structlog.contextvars.clear_contextvars()
 
@@ -75,13 +77,13 @@ def setup_logging() -> None:
 def get_correlation_id() -> str:
     """Generate a correlation ID for request tracking."""
     import uuid
-    
+
     # If we have an active Datadog span, use its trace ID as correlation ID
     if DDTRACE_AVAILABLE:
         span = tracer.current_span()
         if span:
             return str(span.trace_id)
-    
+
     # Otherwise generate a new UUID
     return str(uuid.uuid4())
 

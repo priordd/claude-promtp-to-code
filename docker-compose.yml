@@ -15,6 +15,12 @@ services:
       - EVENT_LOGGING_ENABLED=true
       - DD_PROFILING_ENABLED=true
       - DD_PROFILING_TIMELINE_ENABLED=true
+      - DD_DYNAMIC_INSTRUMENTATION_ENABLED=true
+      - DD_CODE_ORIGIN_FOR_SPANS_ENABLED=true
+      - DD_LOGS_ENABLED=true
+      - DD_ENV=dev
+      - DD_SERVICE=payment-service
+      - DD_VERSION=0.1.0
     depends_on:
       postgres:
         condition: service_healthy
@@ -94,6 +100,7 @@ services:
       - DD_DATABASE_MONITORING_ENABLED=true
       - DD_POSTGRES_ENABLED=true
       - DD_INTEGRATIONS_POSTGRES_ENABLED=true
+      - DD_REMOTE_CONFIGURATION_ENABLED=true
     ports:
       - "8126:8126"
       - "8125:8125/udp"
