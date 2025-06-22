@@ -156,50 +156,7 @@ resource "datadog_dashboard" "payment_service_dashboard" {
         }
       }
 
-      widget {
-        timeseries_definition {
-          title       = "API Request Metrics"
-          title_size  = "16"
-          title_align = "left"
-          show_legend = true
 
-          request {
-            q = "sum:api.payment.success{env:${var.environment}}.as_rate()"
-            display_type = "line"
-            style {
-              palette    = "green"
-              line_type  = "solid"
-              line_width = "normal"
-            }
-          }
-
-          request {
-            q = "sum:api.payment.error{env:${var.environment}}.as_rate()"
-            display_type = "line"
-            style {
-              palette    = "red"
-              line_type  = "solid"
-              line_width = "normal"
-            }
-          }
-
-          request {
-            q = "sum:api.payment.validation_error{env:${var.environment}}.as_rate()"
-            display_type = "line"
-            style {
-              palette    = "orange"
-              line_type  = "solid"
-              line_width = "normal"
-            }
-          }
-
-          yaxis {
-            label = "Requests/sec"
-            scale = "linear"
-            min   = "0"
-          }
-        }
-      }
     }
   }
 
@@ -496,13 +453,13 @@ resource "datadog_dashboard" "payment_service_dashboard" {
 
       widget {
         timeseries_definition {
-          title       = "Request Rate & Response Time"
+          title       = "FastAPI Request Rate & Response Time"
           title_size  = "16"
           title_align = "left"
           show_legend = true
 
           request {
-            q = "sum:trace.web.request.hits{env:${var.environment},service:${var.service_name}}.as_rate()"
+            q = "sum:trace.fastapi.request.hits{env:${var.environment},service:${var.service_name},span.kind:server}.as_rate()"
             display_type = "line"
             style {
               palette    = "blue"
@@ -512,7 +469,7 @@ resource "datadog_dashboard" "payment_service_dashboard" {
           }
 
           request {
-            q = "avg:trace.web.request.duration{env:${var.environment},service:${var.service_name}}"
+            q = "avg:trace.fastapi.request.duration{env:${var.environment},service:${var.service_name},span.kind:server}"
             display_type = "line"
             style {
               palette    = "orange"
@@ -566,13 +523,13 @@ resource "datadog_dashboard" "payment_service_dashboard" {
 
       widget {
         timeseries_definition {
-          title       = "Error Rate"
+          title       = "FastAPI Error Rate"
           title_size  = "16"
           title_align = "left"
           show_legend = true
 
           request {
-            q = "sum:trace.web.request.errors{env:${var.environment},service:${var.service_name}}.as_rate()"
+            q = "sum:trace.fastapi.request.errors{env:${var.environment},service:${var.service_name},span.kind:server}.as_rate()"
             display_type = "line"
             style {
               palette    = "red"
@@ -605,7 +562,7 @@ resource "datadog_dashboard" "payment_service_dashboard" {
           }
 
           request {
-            q = "((sum:trace.web.request.hits{env:${var.environment},service:${var.service_name}} - sum:trace.web.request.errors{env:${var.environment},service:${var.service_name}}) / sum:trace.web.request.hits{env:${var.environment},service:${var.service_name}}) * 100"
+            q = "((sum:trace.fastapi.request.hits{env:${var.environment},service:${var.service_name},span.kind:server} - sum:trace.fastapi.request.errors{env:${var.environment},service:${var.service_name},span.kind:server}) / sum:trace.fastapi.request.hits{env:${var.environment},service:${var.service_name},span.kind:server}) * 100"
             aggregator = "last"
             conditional_formats {
               comparator = ">"
