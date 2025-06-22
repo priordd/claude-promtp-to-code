@@ -85,6 +85,12 @@ resource "datadog_dashboard" "payment_service_dashboard" {
           title_align = "left"
           autoscale   = true
           precision   = 2
+          timeseries_background {
+            type = "bars"
+            yaxis {
+              min = "0"
+            }
+          }
 
           request {
             q = "sum:payment.service.total_amount{env:${var.environment},service:${var.service_name}}"
@@ -110,6 +116,12 @@ resource "datadog_dashboard" "payment_service_dashboard" {
           title_align = "left"
           autoscale   = true
           precision   = 2
+          timeseries_background {
+            type = "bars"
+            yaxis {
+              min = "0"
+            }
+          }
 
           request {
             q = "avg:payment.service.avg_amount{env:${var.environment},service:${var.service_name}}"
@@ -230,6 +242,12 @@ resource "datadog_dashboard" "payment_service_dashboard" {
           title_align = "left"
           autoscale   = true
           precision   = 2
+          timeseries_background {
+            type = "bars"
+            yaxis {
+              min = "0"
+            }
+          }
 
           request {
             q = "sum:payment.refunds.total_amount{env:${var.environment},service:${var.service_name}}"
@@ -250,6 +268,12 @@ resource "datadog_dashboard" "payment_service_dashboard" {
           title_align = "left"
           autoscale   = true
           precision   = 2
+          timeseries_background {
+            type = "bars"
+            yaxis {
+              min = "0"
+            }
+          }
 
           request {
             q = "avg:payment.refunds.avg_amount{env:${var.environment},service:${var.service_name}}"
@@ -343,6 +367,12 @@ resource "datadog_dashboard" "payment_service_dashboard" {
           title_size  = "16"
           title_align = "left"
           autoscale   = true
+          timeseries_background {
+            type = "bars"
+            yaxis {
+              min = "0"
+            }
+          }
 
           request {
             q = "sum:payment.database.dead_tuples{env:${var.environment},service:${var.service_name}}"
@@ -566,6 +596,13 @@ resource "datadog_dashboard" "payment_service_dashboard" {
           title_align = "left"
           autoscale   = true
           precision   = 1
+          timeseries_background {
+            type = "bars"
+            yaxis {
+              min = "0"
+              max = "100"
+            }
+          }
 
           request {
             q = "((sum:trace.web.request.hits{env:${var.environment},service:${var.service_name}} - sum:trace.web.request.errors{env:${var.environment},service:${var.service_name}}) / sum:trace.web.request.hits{env:${var.environment},service:${var.service_name}}) * 100"
