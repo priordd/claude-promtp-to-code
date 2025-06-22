@@ -615,22 +615,22 @@ resource "datadog_dashboard" "payment_service_dashboard" {
     }
   }
 
-  # System Resources
+  # Docker Container Resources
   widget {
     group_definition {
-      title            = "💻 System Resources"
+      title            = "🐳 Docker Container Resources"
       layout_type      = "ordered"
       background_color = "yellow"
 
       widget {
         timeseries_definition {
-          title       = "CPU Usage"
+          title       = "Container CPU Usage"
           title_size  = "16"
           title_align = "left"
           show_legend = true
 
           request {
-            q = "avg:system.cpu.user{env:${var.environment},service:${var.service_name}}"
+            q = "avg:docker.cpu.usage{env:${var.environment},service:payment-service}"
             display_type = "line"
             style {
               palette    = "orange"
@@ -650,13 +650,13 @@ resource "datadog_dashboard" "payment_service_dashboard" {
 
       widget {
         timeseries_definition {
-          title       = "Memory Usage"
+          title       = "Container Memory Usage"
           title_size  = "16"
           title_align = "left"
           show_legend = true
 
           request {
-            q = "avg:system.mem.used{env:${var.environment},service:${var.service_name}}"
+            q = "avg:docker.mem.usage{env:${var.environment},service:payment-service}"
             display_type = "line"
             style {
               palette    = "purple"
@@ -665,10 +665,122 @@ resource "datadog_dashboard" "payment_service_dashboard" {
             }
           }
 
+          request {
+            q = "avg:docker.mem.limit{env:${var.environment},service:payment-service}"
+            display_type = "line"
+            style {
+              palette    = "red"
+              line_type  = "dashed"
+              line_width = "thin"
+            }
+          }
+
           yaxis {
             label = "Memory (bytes)"
             scale = "linear"
             min   = "0"
+          }
+        }
+      }
+
+      widget {
+        timeseries_definition {
+          title       = "Container Network I/O"
+          title_size  = "16"
+          title_align = "left"
+          show_legend = true
+
+          request {
+            q = "avg:docker.net.bytes_rcvd{env:${var.environment},service:payment-service}"
+            display_type = "line"
+            style {
+              palette    = "green"
+              line_type  = "solid"
+              line_width = "normal"
+            }
+          }
+
+          request {
+            q = "avg:docker.net.bytes_sent{env:${var.environment},service:payment-service}"
+            display_type = "line"
+            style {
+              palette    = "blue"
+              line_type  = "solid"
+              line_width = "normal"
+            }
+          }
+
+          yaxis {
+            label = "Bytes/sec"
+            scale = "linear"
+            min   = "0"
+          }
+        }
+      }
+
+      widget {
+        timeseries_definition {
+          title       = "Container Disk I/O"
+          title_size  = "16"
+          title_align = "left"
+          show_legend = true
+
+          request {
+            q = "avg:docker.io.read_bytes{env:${var.environment},service:payment-service}"
+            display_type = "line"
+            style {
+              palette    = "warm"
+              line_type  = "solid"
+              line_width = "normal"
+            }
+          }
+
+          request {
+            q = "avg:docker.io.write_bytes{env:${var.environment},service:payment-service}"
+            display_type = "line"
+            style {
+              palette    = "cool"
+              line_type  = "solid"
+              line_width = "normal"
+            }
+          }
+
+          yaxis {
+            label = "Bytes/sec"
+            scale = "linear"
+            min   = "0"
+          }
+        }
+      }
+
+      widget {
+        query_value_definition {
+          title       = "Container Status"
+          title_size  = "16"
+          title_align = "left"
+          autoscale   = true
+          precision   = 0
+          timeseries_background {
+            type = "bars"
+            yaxis {
+              min = "0"
+              max = "1"
+            }
+          }
+
+          request {
+            q = "avg:docker.containers.running{env:${var.environment},service:payment-service}"
+            aggregator = "last"
+            conditional_formats {
+              comparator = "="
+              value      = 1
+              palette    = "green_on_white"
+            }
+            conditional_formats {
+              comparator = "<"
+              value      = 1
+              palette    = "red_on_white"
+            }
           }
         }
       }
