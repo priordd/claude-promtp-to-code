@@ -192,6 +192,10 @@ clean-venv: ## Remove virtual environment
 
 clean-all: clean clean-venv ## Clean everything including virtual environment
 	@echo "All cleaned up!"
+	$(MAKE) clean
+	$(MAKE) clean-venv
+	$(MAKE) clean-docker
+	$(MAKE) terraform-destroy
 
 clean-docker: ## Clean up Docker resources
 	@echo "Cleaning up Docker resources..."
@@ -274,6 +278,8 @@ full-test: ## Full test suite including Docker rebuild
 	@sleep 10
 	$(MAKE) test
 	$(MAKE) test-api
+	$(MAKE) terraform-setup
+
 
 # Performance testing  
 perf-test: ## Run performance tests (placeholder)

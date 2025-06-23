@@ -22,6 +22,16 @@ A production-ready payment processing microservice built with FastAPI, PostgreSQ
 - `make` command
 - `curl` and `jq` (for API testing)
 
+
+### Fast track
+
+```bash
+# Clone the repository and navigate to the service directory and cd into it
+make full-test ## install everything and run tests
+make clean-all ## cleanup everything
+```
+
+
 ### Start the Service
 
 ```bash
