@@ -27,6 +27,7 @@ A production-ready payment processing microservice built with FastAPI, PostgreSQ
 
 ```bash
 # Clone the repository and navigate to the service directory and cd into it
+cp .env.example .env ## add DD_API_KEY and DD_APP_KEY values
 make full-test ## install everything and run tests
 make clean-all ## cleanup everything
 ```
